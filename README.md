@@ -17,7 +17,7 @@
 |参数            |类型(默认值)                | 必填    |  说明 |
 | -------------- |:--------------------:|:----------:|:-----------:|
 | baseUrl        |String('')            |否          | 接口请求基地址
-| contentType    |String('json')        |否          | 请求类型可选值为`json`|`form`|`file`
+| contentType    |String('json')        |否          | 请求类型可选值为`json`、`form`、`file`
 | encoding       |String('utf-8')       |否          | 请求编码
 | business       |String('data')        |否          | 接口业务数据对象名称
 | skipInterceptorResponse        |Boolean(false)            |否          | 是否拦截响应

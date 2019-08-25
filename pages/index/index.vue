@@ -28,7 +28,9 @@ export default {
             json: ''
         };
     },
-    onLoad() {},
+    onLoad() {
+        this.$request.post()
+    },
     methods: {
         example1(full) {
             var that = this;
