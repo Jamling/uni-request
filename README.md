@@ -16,30 +16,39 @@
 
 |参数            |类型(默认值)                | 必填    |  说明 |
 | -------------- |:--------------------:|:----------:|:-----------:|
+| debug          |boolean(false)        |否          | 是否开启debug模式，在此模式下，所有的请求都会打印请求参数，响应对象或错误信息
 | baseUrl        |String('')            |否          | 接口请求基地址
 | contentType    |String('json')        |否          | 请求类型可选值为`json`、`form`、`file`
-| encoding       |String('utf-8')       |否          | 请求编码
-| business       |String('data')        |否          | 接口业务数据对象名称
-| skipInterceptorResponse        |Boolean(false)            |否          | 是否拦截响应
-| slashAbsoluteUrl |Boolean(true)            |否          | 以/开头的url是否视为绝对url
-| loadingTip      |String(true)            |否          | 请求前显示加载中提示框
-| loadingDuration |Number(500)            |否          | 加载提示框显示的最小时间
+| encoding       |String('utf-8')       |否          | 请求编码，默认为utf-8
+| business       |String('data')        |否          | 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
+| skipInterceptorResponse        |Boolean(false)            |否          | 是否跳过响应过滤器，如需跳过，请置true
+| slashAbsoluteUrl |Boolean(false)            |否          | 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
+| loadingTip      |String(undefined)            |否          | 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
+| loadingDuration |Number(500)            |否          | 设置loadingTip时的最小loading显示时间
 
 示例
 
 ``` js
 import request from './request.js'
 console.log(request);
-request.config.baseUrl = 'http://api.ieclipse.cn/wnl/'
+var baseUrl = 'http://api.ieclipse.cn/wnl/'
 // #ifdef H5
-request.config.baseUrl = '/wnl/'
+baseUrl = '/wnl/'
 // #endif
+request.setConfig({
+    baseUrl: baseUrl,
+    debug: true
+})
 
 // 把request作为全局对象，这样小程序也可以用了
 Vue.prototype.$request = request
 ```
 
 ### 拦截器配置
+
+#### 请求拦截
+
+可以给请求添加一些全局参数及自定义的配置
 
 ```js
 // 请求拦截
@@ -56,14 +65,18 @@ request.interceptor.request = (config => {
     if (config.toastError === undefined) {
         config.toastError = true
     }
-    console.log('request:');
-    console.log(config);
     return config;
 })
+
+```
+
+#### 响应拦截
+
+当http请求成功（响应码为200）后的响应拦截，可以根据状态码统一判断业务请求是否成功，如果成功，请设置一个success=true的标志位
+
+```js
 // 全局的业务拦截
 request.interceptor.response = ((res, config) => {
-    console.log('response:');
-    console.log(res);
     if (res.code === 0) {
         res.success = true;
     } else if (res.code === 1001) {
@@ -75,17 +88,23 @@ request.interceptor.response = ((res, config) => {
     return res;
 })
 
+```
+
+#### 错误处理
+
+当http请求失败或业务请求失败的处理，
+
+```js
+
 // 全局的错误异常处理
 request.interceptor.fail = ((res, config) => {
-    console.log('error:');
-    console.log(res);
     let ret = res;
     let msg = ''
     if (res.statusCode === 200) { // 业务错误
         msg = res.data.msg
         ret = res.data
     } else if (res.statusCode > 0) { // HTTP错误
-        msg = '网络错误'
+        msg = '服务器异常[' + res.statusCode + ']'
     } else { // 其它错误
         msg = res.errMsg
     }
