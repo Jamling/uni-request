@@ -9,6 +9,7 @@
 - 支持PCallback和romise，Callback优先
 - 支持请求拦截和响应拦截及全局请求异常处理
 - 支持文件上传及进度监听
+- 支持取消
 
 ## 使用
 ### 参数配置
@@ -18,13 +19,13 @@
 | -------------- |:--------------------:|:----------:|:-----------:|
 | debug          |boolean(false)        |否          | 是否开启debug模式，在此模式下，所有的请求都会打印请求参数，响应对象或错误信息
 | baseUrl        |String('')            |否          | 接口请求基地址
-| contentType    |String('json')        |否          | 请求类型可选值为`json`、`form`、`file`
+| contentType    |String('json')        |否          | 请求类型可选值为`json`、`form`、`file`、`text`、`html`
 | encoding       |String('utf-8')       |否          | 请求编码，默认为utf-8
 | business       |String('data')        |否          | 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
-| skipInterceptorResponse        |Boolean(false)            |否          | 是否跳过响应过滤器，如需跳过，请置true
-| slashAbsoluteUrl |Boolean(false)            |否          | 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
-| loadingTip      |String(undefined)            |否          | 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
-| loadingDuration |Number(500)            |否          | 设置loadingTip时的最小loading显示时间
+| skipInterceptorResponse        |Boolean(false)     |否          | 是否跳过响应过滤器，如需跳过，请置true
+| slashAbsoluteUrl               |Boolean(false)     |否          | 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
+| loadingTip                     |string(undefined)  |否          | 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
+| loadingDuration                |Number(500)        |否          | 设置loadingTip时的最小loading显示时间
 
 示例
 
@@ -193,7 +194,7 @@ request.interceptor.fail = ((res, config) => {
             that.$request
                 .get({
                     url: tokenUrl,
-                    slashAbsoluteUrl: false
+                    slashAbsoluteUrl: true
                 })
                 .then(res => {
                     that.json = JSON.stringify(res);

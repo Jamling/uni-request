@@ -6,6 +6,8 @@
         <view>
             <button size="mini" type="warn" @click="fail1">错误请求（业务错误）</button>
             <button size="mini" type="warn" class="not-first" @click="fail2">错误请求（HTTP 404）</button>
+            <button size="mini" type="warn" @click="fail3">访问404公司（可取消）</button>
+            <button size="mini" type="default" class="not-first" @click="cancel">取消访问404公司</button>
         </view>
         <view>
             <image class="logo" :src="logo" @click="pickerImg"></image>
@@ -25,11 +27,12 @@ export default {
         return {
             title: '点击上面的图片选择图片上传',
             logo: '/static/logo.png',
-            json: ''
+            json: '',
+            task: undefined,
         };
     },
     onLoad() {
-        this.$request.post()
+        
     },
     methods: {
         example1(full) {
@@ -102,6 +105,28 @@ export default {
                     }
                 );
         },
+        fail3() {
+            var that = this;
+            this.task = this.$request.get({
+                url : 'https://www.google.com',
+                loadingTip: '正在连接404公司...',
+                success: (res=>{
+                    console.log('喔，竟然能访问404公司！');
+                }),
+                fail: (res=>{
+                    console.error('访问不了是正常的，不然为啥叫404公司')
+                })
+            })
+            console.log('task', this.task);
+        },
+        cancel() {
+            if (this.task && this.task.abort) {
+                console.log(this.task);
+                this.task.abort();
+                return true;
+            }
+            return false;
+        },
         pickerImg() {
             var that = this;
             uni.chooseImage({
@@ -122,7 +147,7 @@ export default {
             that.$request
                 .get({
                     url: tokenUrl,
-                    slashAbsoluteUrl: false
+                    slashAbsoluteUrl: true // 如果有大量的类似请求，可以配置全局参数
                 })
                 .then(res => {
                     that.json = JSON.stringify(res);
@@ -156,6 +181,9 @@ export default {
                         });
                 });
         }
+    },
+    onBackPress: () => {
+        return this.cancel();
     }
 };
 </script>

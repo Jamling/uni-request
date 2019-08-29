@@ -1,7 +1,7 @@
 /**
  * A Request useing App network request design {@link http://ext.dcloud.net.cn/plugin?id=709}
  * @author Jamling <li.jamling@gmail.com>
- * @version 1.0.0
+ * @version 1.0.1
  * 
  **/
 'use strict';
@@ -54,6 +54,10 @@ class Request {
             return 'application/x-www-form-urlencoded;charset=' + charset
         } else if (type === 'file') {
             return 'multipart/form-data;charset=' + charset
+        } else if (type === 'text') {
+            return 'text/plain;charset=' + charset
+        } else if (type === 'html') {
+            return 'text/html;charset=' + charset
         } else {
             throw new Error('unsupported content type : ' + type)
         }
@@ -83,44 +87,43 @@ class Request {
         this.config = Object.assign(this.config, config)
     }
 
-    request(args = {}) {
+    request(options = {}) {
         var that = this;
-        if (args.data === undefined) {
-            args.data = {}
+        if (options.data === undefined) {
+            options.data = {}
         }
-        if (args.header === undefined) {
-            args.header = {}
-        }
-
-        let options = Object.assign({}, this.config, args)
-        options = Object.assign(args, options)
-
-        options.url = Request.getUrl(options)
-        if (!options.header['Content-Type']) {
-            options.header['Content-Type'] = Request.getContentType(options)
+        if (options.header === undefined) {
+            options.header = {}
         }
 
-        return new Promise((resolve, reject) => {
-            let next = true
-            let _config = options
-            if (that.interceptor.request && typeof that.interceptor.request === 'function') {
-                _config = that.interceptor.request(options)
-            }
+        let _options = Object.assign({}, this.config, options)
+        _options = Object.assign(options, _options)
+
+        _options.url = Request.getUrl(_options)
+        if (!_options.header['Content-Type']) {
+            _options.header['Content-Type'] = Request.getContentType(_options)
+        }
+        let _config = _options
+        if (that.interceptor.request && typeof that.interceptor.request === 'function') {
+            _config = that.interceptor.request(_options)
+        }
+        let task = undefined
+        let promise = new Promise((resolve, reject) => {
+
             let extras = {
 
             }
             that._prepare(that, _config, extras)
-            let cancel = (_config) => {
-                that._fail(that, _config, {
-                    errMsg: 'request:canceled',
-                    statusCode: -1
-                }, resolve, reject)
-                next = false
-            }
+            // let cancel = (_config) => {
+            //     that._fail(that, _config, {
+            //         errMsg: 'request:canceled',
+            //         statusCode: -1
+            //     }, resolve, reject)
+            //     next = false
+            // }
 
-            if (!next) return
             if (_config.contentType === 'file') {
-                let task = uni.uploadFile({
+                task = uni.uploadFile({
                     ..._config,
                     success: res => {
                         that._success(that, _config, res, resolve, reject)
@@ -138,7 +141,7 @@ class Request {
                     })
                 }
             } else {
-                uni.request({
+                task = uni.request({
                     ..._config,
                     success: res => {
                         that._success(that, _config, res, resolve, reject)
@@ -152,6 +155,10 @@ class Request {
                 })
             }
         })
+        if (_config.success || _config.fail || _config.complete) {
+            return task;
+        }
+        return promise;
     }
 
     /**
@@ -250,11 +257,10 @@ class Request {
 
     _success = function(that, _config, res, resolve, reject) {
         if (res.statusCode >= 200 && res.statusCode <= 302) { // http ok
-            if (_config.debug) {
-                console.log('response success: ', res)
-            }
             var result = res.data // 全局的拦截器
-            if (_config.contentType === 'file' && typeof result === 'string' && _config.dataType === 'json') {
+            var parseFileJson = _config.contentType === 'file' && typeof result === 'string' && (_config.dataType ===
+                undefined || _config.dataType === 'json')
+            if (parseFileJson) {
                 result = JSON.parse(res.data);
             }
             var skip = _config.skipInterceptorResponse
@@ -265,6 +271,9 @@ class Request {
             }
             if (skip || result.success) { // 接口调用业务成功
                 var _data = _config.business ? result[_config.business] : result;
+                if (_config.debug) {
+                    console.log('response success: ', _data)
+                }
                 _config.success ? _config.success(_data) : resolve(_data)
                 return;
             }
@@ -275,6 +284,9 @@ class Request {
     _fail = function(that, _config, res, resolve, reject) {
         if (_config.debug) {
             console.error('response failure: ', res)
+        }
+        if (res.errMsg === 'request:fail abort') {
+            return
         }
         var result = res
         if (that.interceptor.fail && typeof that.interceptor.fail === 'function') {

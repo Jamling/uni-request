@@ -24,7 +24,6 @@ request.interceptor.request = (config => {
     if (config.toastError === undefined) {
         config.toastError = true
     }
-    console.info('request: ', config);
     return config;
 })
 // 全局的业务拦截
