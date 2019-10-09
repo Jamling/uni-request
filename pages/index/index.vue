@@ -47,12 +47,16 @@ export default {
                 fail: res => {
                     console.log('failure');
                     that.json = JSON.stringify(res);
+                },
+                complete: res=> {
+                    // since 1.2.0
+                    console.log('complete', res);
                 }
             });
         },
-        example2() {
+        async example2() {
             var that = this;
-            this.$request
+            var res = await this.$request
                 .get({
                     url: 'solar',
                     loadingTip: '接口请求中...'

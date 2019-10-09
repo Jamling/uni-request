@@ -74,7 +74,8 @@ class Request {
          */
         request: undefined,
         response: undefined,
-        fail: undefined
+        fail: undefined,
+        complete: undefined // since 1.2.0
     }
 
     /**
@@ -110,17 +111,9 @@ class Request {
         let task = undefined
         let promise = new Promise((resolve, reject) => {
 
-            let extras = {
+            let extras = {}
 
-            }
             that._prepare(that, _config, extras)
-            // let cancel = (_config) => {
-            //     that._fail(that, _config, {
-            //         errMsg: 'request:canceled',
-            //         statusCode: -1
-            //     }, resolve, reject)
-            //     next = false
-            // }
 
             if (_config.contentType === 'file') {
                 task = uni.uploadFile({
@@ -296,6 +289,10 @@ class Request {
     }
 
     _prepare = function(that, _config, obj = {}) {
+        if (that.interceptor.prepare && typeof that.interceptor.prepare === 'function') {
+            that.interceptor.prepare(_config, obj)
+            return
+        }
         obj.startTime = Date.now()
         if (_config.loadingTip) {
             uni.showLoading({
@@ -317,6 +314,10 @@ class Request {
     }
 
     _complete = function(that, _config, res, obj = {}) {
+        if (that.interceptor.complete && typeof that.interceptor.complete === 'function') {
+            that.interceptor.complete(_config, obj, res)
+            return
+        }
         obj.endTime = Date.now()
         if (_config.debug) {
             console.log('request completed in ' + (obj.endTime - obj.startTime) + ' ms')
@@ -334,8 +335,10 @@ class Request {
                 uni.hideLoading()
             }, diff)
         }
+        if (_config.complete) {
+            _config.complete(res)
+        }
     }
-
 }
 /**
  * 

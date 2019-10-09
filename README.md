@@ -1,8 +1,10 @@
 # j-request
-一个支持Promise和拦截器的网络请求
+一个通用的网络请求/文件上传组件，支持Promise、拦截器、文件上传、取消请求
+
+[!screenshot](static/screenshot.png)
 
 ## 简介
-我此前是做App开发的，在试用了3个request插件之后，还是决定再造一个轮子，来达到像原来App中那样的网络请求控制效果。本人因为对前端不太懂，所以有些代码是参考plcky-request, luch-request和axio-request写的。
+我此前是做App开发的，在试用了3个request插件之后，感觉在封装及通用处理上不太如如意，最后还是决定再造一个轮子，来达到像原来App框架中的网络请求控制效果。本人因为对前端不太懂，所以有些代码是参考plcky-request, luch-request和axio-request写的。
 
 ## 特性
 

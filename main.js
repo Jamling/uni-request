@@ -61,6 +61,18 @@ request.interceptor.fail = ((res, config) => {
     return ret;
 })
 
+// since 1.2.0 全局请求开始前回调，如果设置，那么内置的请求开始回调不会执行
+// request.interceptor.prepare = ((config, extra) => {
+//     console.log('global prepare');
+//     extra.start = Date.now()
+// })
+// // since 1.2.0 全局请求完成的回调，如果设置，那么内置的请求结束回调不会执行
+// request.interceptor.complete = ((config, extra, res) => {
+//     console.log('global complete');
+//     extra.end = Date.now()
+//     console.log('request cost time ' + (extra.end - extra.start));
+// })
+
 /**
  * Assign the request to global VUE.
  * @param {Request} $request - The request object.

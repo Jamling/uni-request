@@ -1,6 +1,6 @@
 {
   "name": "uni-request",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "uniapp request library",
   "main": "index.js",
   "scripts": {
