@@ -159,7 +159,7 @@ class Request {
      * @description execute a get request
      * @param {Object} options - 参数选项
      * @param {string} options.url - 请求地址
-     * @param {string} [options.method=GET] - 请求方法 GET|POST
+     * @param {string} [options.method=GET] - 请求方法 GET|POST|PUT|DELETE
      * @param {string} [options.contentType=json] - 请求类型，为json(默认)，form
      * @param {Object} [options.data] - 请求参数
      * @param {string} [options.encoding] - 请求编码，默认为utf-8
@@ -185,63 +185,21 @@ class Request {
         return this.request(options)
     }
 
-    /**
-         * @method
-         * @description execute a post request
-         * @param {Object} options - 参数选项
-         * @param {string} options.url - 请求地址
-         * @param {string} [options.method=POST] - 请求方法 GET|POST
-         * @param {string} [options.contentType=json] - 请求类型，为json(默认)，form
-         * @param {Object} [options.data] - 请求参数
-         * @param {string} [options.encoding] - 请求编码，默认为utf-8
-         * @param {string} [options.dataType] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
-         * @param {string} [options.business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
-         * @param {string} [options.skipInterceptorResponse] - 是否跳过响应过滤器，如需跳过，请置true
-         * @param {string} [options.slashAbsoluteUrl] - 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
-         * @param {string} [options.loadingTip] - 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
-         * @param {string} [options.loadingDuration] - 设置loadingTip时的最小loading显示时间
-         * 
-         * @return {Promise} promise
-         * @example
-         * $request.post({
-            url: 'foo/bar',
-            data: {
-                param1: value1
-            }
-        })
-        * @see {@link https://uniapp.dcloud.io/api/request/request}
-        */
     post(options = {}) {
         options.method = 'POST'
         return this.request(options)
     }
-    /**
-     * @method
-     * @description execute a get request
-     * @param {Object} options - 参数选项
-     * @param {string} options.url - 请求地址
-     * @param {string} [options.method=GET] - 请求方法 GET|POST
-     * @param {string} [options.contentType=json] - 请求类型，为json(默认)，form
-     * @param {Object} [options.data] - 请求参数
-     * @param {string} [options.encoding] - 请求编码，默认为utf-8
-     * @param {string} [options.dataType] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
-     * @param {string} [options.business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
-     * @param {string} [options.skipInterceptorResponse] - 是否跳过响应过滤器，如需跳过，请置true
-     * @param {string} [options.slashAbsoluteUrl] - 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
-     * @param {string} [options.loadingTip] - 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
-     * @param {string} [options.loadingDuration] - 设置loadingTip时的最小loading显示时间
-     * 
-     * @return {Promise} promise
-     * @example
-     * $request.upload({
-        url: 'foo/bar',
-        filePath: res.tempFilePaths[0];
-        data: {
-            param1: value1
-        }
-    })
-    * @see {@link https://uniapp.dcloud.io/api/request/network-file}
-    */
+    
+    put(options = {}) {
+        options.method = 'PUT'
+        return this.request(options)
+    }
+    
+    delete(options = {}) {
+        options.method = 'DELETE'
+        return this.request(options)
+    }
+   
     upload(options = {}) {
         options.method = 'POST'
         options.contentType = 'file'
@@ -262,7 +220,7 @@ class Request {
                 // 这种情况下，要根据_config在全局拦截器中将其它系统的返回适配为本系统的业务对象
                 result = that.interceptor.response(result, _config)
             }
-            if (skip || result.success) { // 接口调用业务成功
+            if (!skip) { // 接口调用业务成功
                 var _data = _config.business ? result[_config.business] : result;
                 if (_config.debug) {
                     console.log('response success: ', _data)
@@ -270,6 +228,7 @@ class Request {
                 _config.success ? _config.success(_data) : resolve(_data)
                 return;
             }
+            
         }
         that._fail(that, _config, res, resolve, reject)
     }
