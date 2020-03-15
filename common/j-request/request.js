@@ -227,6 +227,8 @@ class Request {
                 }
                 _config.success ? _config.success(_data) : resolve(_data)
                 return;
+            } else {
+                return resolve(result)
             }
             
         }
