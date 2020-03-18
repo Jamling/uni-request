@@ -29,7 +29,8 @@ request.interceptor.request = (config => {
 // 全局的业务拦截
 request.interceptor.response = ((res, config) => {
     if (res.code === 0) {
-        res.success = true;
+        //res.success = true;
+        config.businessSuccess = true;
     } else if (res.code === 1001) {
         // token失效，需要重新登录
         uni.navigateTo({

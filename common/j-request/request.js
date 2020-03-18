@@ -215,6 +215,22 @@ class Request {
         options.method = 'POST'
         return this.request(options)
     }
+
+    /**
+     * author by wyh
+     */
+    put(options = {}) {
+        options.method = 'PUT'
+        return this.request(options)
+    }
+    /**
+     * author by wyh
+     */
+    delete(options = {}) {
+        options.method = 'DELETE'
+        return this.request(options)
+    }
+
     /**
      * @method
      * @description execute a get request
@@ -257,26 +273,36 @@ class Request {
                 result = JSON.parse(res.data);
             }
             var skip = _config.skipInterceptorResponse
+            // 走全局的拦截器，
             if (that.interceptor.response && typeof that.interceptor.response === 'function' && !skip) {
-                // TODO 对于某些特殊接口，比如访问其它系统，全局拦截器可能不适合
-                // 这种情况下，要根据_config在全局拦截器中将其它系统的返回适配为本系统的业务对象
                 result = that.interceptor.response(result, _config)
-            }
-            if (skip || result.success) { // 接口调用业务成功
-                var _data = _config.business ? result[_config.business] : result;
-                if (_config.debug) {
-                    console.log('response success: ', _data)
+                if (_config.businessSuccess /* || result.success*/ ) { // 不兼容原来的接口业务逻辑调用成功判定
+                    // 接口调用业务成功
+                    var _data = _config.business ? result[_config.business] : result;
+                    if (_config.debug) {
+                        console.log(`response(${_config.url }) success: `, _data)
+                    }
+                    _config.success ? _config.success(_data) : resolve(_data)
+                    return;
                 }
-                _config.success ? _config.success(_data) : resolve(_data)
+            } else {
+
+                // 对于某些特殊接口，比如访问其它系统，全局拦截器可能不适合
+                // 这种情况下，需要自己处理接口响应，相当于透传
+                if (_config.debug) {
+                    console.log(`response(${_config.url }) success: `, result)
+                }
+                _config.success ? _config.success(result) : resolve(result)
                 return;
             }
         }
+        // 剩下的都走失败
         that._fail(that, _config, res, resolve, reject)
     }
 
     _fail = function(that, _config, res, resolve, reject) {
         if (_config.debug) {
-            console.error('response failure: ', res)
+            console.error(`response(${_config.url }) failure: `, res)
         }
         if (res.errMsg === 'request:fail abort') {
             return
@@ -309,7 +335,7 @@ class Request {
             _config.method = 'POST'
         }
         if (_config.debug) {
-            console.log('request: ', _config)
+            console.log(`request(${_config.url }): `, _config)
         }
     }
 
@@ -320,7 +346,7 @@ class Request {
         }
         obj.endTime = Date.now()
         if (_config.debug) {
-            console.log('request completed in ' + (obj.endTime - obj.startTime) + ' ms')
+            console.log(`request(${_config.url }) completed in ${obj.endTime - obj.startTime} ms`)
         }
         if (_config.loadingTip) {
             let diff = obj.endTime - obj.startTime;
