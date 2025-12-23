@@ -1,10 +1,10 @@
 /** 允许定义的uni-app全局选项 */
 type UniGlobalOptions = Omit<UniApp.RequestOptions, 'url' | 'data' | 'success' | 'fail' | 'complete'>
 /** 允许定义的适用于小程序等uni-app全局选项 */
-type UniMpOptions = Pick<UniApp.RequestOptions, 'enableHttp2' | 'enableHttpDNS' | 'enableQuic' | 'enableCache' | 'httpDNSServiceId' | 'forceCellularNetwork' | 'enableCookie' | 'cloudCache' | 'defer'>
+export type UniMpOptions = Pick<UniApp.RequestOptions, 'enableHttp2' | 'enableHttpDNS' | 'enableQuic' | 'enableCache' | 'httpDNSServiceId' | 'forceCellularNetwork' | 'enableCookie' | 'cloudCache' | 'defer'>
 
 /**本库定义的额外全局选项*/
- interface ExtGlobalOptions {
+interface ExtGlobalOptions {
     /**请求基地址，使用/结尾*/
     baseUrl ?: string
     contentType ?: 'json' | 'form' | 'file'
@@ -32,58 +32,56 @@ type UniMpOptions = Pick<UniApp.RequestOptions, 'enableHttp2' | 'enableHttpDNS' 
 
     }
 }
- interface ExtRequestOptions {
+interface ExtRequestOptions {
     /** 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示 */
-    loadingTip : string,
+    loadingTip ?: string,
     /** 设置loadingTip时的最小loading显示时间 */
-    loadingDuration : number,
+    loadingDuration ?: number,
     /** 是否跳过响应过滤器，如需跳过，请置true */
-    skipInterceptorResponse : boolean
+    skipInterceptorResponse ?: boolean
 }
 
-declare interface RequestInterceptor {
+export interface RequestInterceptor {
     (config : GlobalRequestOptions) : GlobalRequestOptions | Promise<GlobalRequestOptions> | any
 }
 
-declare interface ResponseInterceptor {
-    (res: any)
+export interface ResponseInterceptor {
+    (res: AnyObject): AnyObject
 }
 
-type GlobalRequestOptions = UniGlobalOptions & ExtGlobalOptions
-type CombineRequestOptions = UniApp.RequestOptions & GlobalRequestOptions & ExtRequestOptions
+export type GlobalRequestOptions = UniGlobalOptions & ExtGlobalOptions
+export type CombineRequestOptions = UniApp.RequestOptions & GlobalRequestOptions & ExtRequestOptions
 
-type CombineUploadOptions = UniApp.UploadFileOption & GlobalRequestOptions & ExtRequestOptions
+export type CombineUploadOptions = UniApp.UploadFileOption & GlobalRequestOptions & ExtRequestOptions
 
-type ContentType = [string | null, string | null]
+
 
 // 请求状态接口
-declare interface RequestState<T = any> {
+export interface RequestState<T = any> {
     /** 响应数据 */
-    data : T | null
+    data ?: T | null
     /** 响应对象（原始） */
-    response : any | null
+    response ?: any | null
     /** 错误信息 */
-    error : any | null
+    error ?: any | null
     /** 是否正在加载 */
-    isLoading : boolean
+    isLoading ?: boolean
     /** 是否已加载完成（无论成功失败） */
-    isFinished : boolean
+    isFinished ?: boolean
     /** 是否加载成功 */
-    isSuccess : boolean
+    isSuccess ?: boolean
     /** 是否加载失败 */
-    isError : boolean
+    isError ?: boolean
     /** 是否无数据 */
-    isEmpty : boolean
+    isEmpty ?: boolean
     /** 请求状态码 */
-    statusCode : number | null
+    statusCode ?: number | null
     /** 请求取消函数 */
-    abort : (() => void) | null
+    abort ?: (() => void) | null
     /** 请求配置 */
     config : CombineRequestOptions
     [key : string] : any
 }
-
-type SuccessCallbackResult = Partial<UniApp.UploadFileSuccessCallbackResult> | Partial<UniApp.RequestSuccessCallbackResult>
 
 type CallbackOptions = Pick<UniApp.RequestOptions, 'success' | 'fail' | 'complete'> & Pick<UniApp.UploadFileOption, 'success' | 'fail' | 'complete'>
 

@@ -1,0 +1,17 @@
+{
+    "code": 0,
+    "msg": "success",
+    "data": {
+        "list": [{
+            "title": "今日热点",
+            "content": "东风5C发布，全球包邮！",
+            "image": "/static/logo.png"
+        }, {
+            "title": "本地新闻",
+            "content": "南京气温又叕降了，开启速冻模式！",
+            "image": "/static/logo.png"
+        }],
+        "total": 2,
+        "pageSize": 10
+    }
+}

@@ -1,3 +1,5 @@
+import { CombineRequestOptions, CombineUploadOptions, GlobalRequestOptions, RequestState, UniMpOptions } from "./types";
+
 let globalInterceptor : Partial<Record<'request' | 'response' | 'error' | 'complete', any>>;
 let globalOptions : Record<string, any>;
 export function setConfig(config : GlobalRequestOptions) {
@@ -23,8 +25,12 @@ export function get(options : CombineRequestOptions) {
     options.method = 'GET'
     return request(options)
 }
+export function post(options : CombineRequestOptions) {
+    options.method = 'POST'
+    return request(options)
+}
 
-export function request(options : CombineRequestOptions) {
+export function request<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
     let _options : CombineRequestOptions = { ...globalOptions, ...options }
     callback(globalInterceptor.request, _options)
     //callback(_options.interceptor?.request)
@@ -33,18 +39,15 @@ export function request(options : CombineRequestOptions) {
         config: _options,
         startTime: Date.now()
     }
-    if (_options.loadingTip) {
-        uni.showLoading({
-            title: _options.loadingTip
-        })
-    }
-    let task : UniApp.UploadTask | UniApp.RequestTask
+    
 
-    let promise = new Promise((resolve, reject) => {
+    let task
+    
+    let promise = new Promise<T>((resolve, reject) => {
         let resolvedOption : CombineRequestOptions = {
             ..._options,
             success: (res : UniApp.RequestSuccessCallbackResult) => {
-                handleSuccessCallback(state, res, resolve, reject)
+                _handleSuccessCallback(state, res, resolve, reject)
             },
             fail: (res : UniApp.GeneralCallbackResult) => {
                 _handleFailCallback(state, res, resolve, reject)
@@ -53,7 +56,8 @@ export function request(options : CombineRequestOptions) {
                 _handleCompleteCallback(state, res, resolve, reject)
             },
         }
-        uni.request(resolvedOption)
+        task = uni.request(resolvedOption) as any as UniApp.RequestTask
+        return task
     })
     if (_options.success || _options.fail || _options.complete) {
         //return task;
@@ -73,29 +77,33 @@ function callback(fn : any, ...args : any[]) {
     }
 }
 
+type ContentType = [string | null, string | null]
 function handleRequestOptions(options : CombineRequestOptions | CombineUploadOptions | any) {
-    let type = options.contentType
     let contentType : ContentType = [null, null]
-
-    if (type === 'json') {
-        contentType[0] = 'application/json'
-    } else if (type === 'form') {
-        contentType[0] = 'application/x-www-form-urlencoded'
-    } else if (type === 'file') {
-        contentType[0] = 'multipart/form-data'
-        if (options.method !== 'POST') {
-            console.warn('文件上传，请求方法不对，已自动修正');
-        }
-        if (options.data && typeof options === 'object') {
-            let data = options.data as object
-            options.formData = {
-                ...options.formData,
-                ...data
+    switch (options.contentType) {
+        case 'json':
+            contentType[0] = 'application/json'
+            break
+        case 'form':
+            contentType[0] = 'application/x-www-form-urlencoded'
+            break
+        case 'file':
+            contentType[0] = 'multipart/form-data'
+            if (options.method !== 'POST') {
+                console.warn('文件上传，请求方法不对，已自动修正');
             }
-            delete options.data
-        }
-    } else {
-        throw new Error('unsupported content type : ' + type)
+            if (options.data && typeof options === 'object') {
+                let data = options.data as object
+                options.formData = {
+                    ...options.formData,
+                    ...data
+                }
+                delete options.data
+            }
+            break
+        default:
+            //throw new Error('unsupported content type : ' + type)
+            break
     }
 
     contentType[1] = options.encoding ? `charset=${options.encoding}` : ''
@@ -107,10 +115,15 @@ function handleRequestOptions(options : CombineRequestOptions | CombineUploadOpt
         console.warn('header 中不能设置 Referer，已自动删除');
         delete options.header['Referer']
     }
-
+    if (options.loadingTip) {
+        uni.showLoading({
+            title: options.loadingTip
+        })
+    }
 }
 
-function handleSuccessCallback(state : Partial<RequestState>, res : SuccessCallbackResult, resolve : (value : unknown) => void, reject : (reason ?: any) => void) {
+type SuccessCallbackResult = Partial<UniApp.UploadFileSuccessCallbackResult> | Partial<UniApp.RequestSuccessCallbackResult>
+function _handleSuccessCallback(state : Partial<RequestState>, res : SuccessCallbackResult, resolve : (value : any) => void, reject : (reason ?: any) => void) {
     // TODO handle MP POST redirect
     if (res.statusCode !== 200) {
         _handleFailCallback(state, res, resolve, reject)
@@ -130,14 +143,14 @@ function handleSuccessCallback(state : Partial<RequestState>, res : SuccessCallb
     }
 
     if (!state.config?.skipInterceptorResponse && typeof result === 'object') {
-        result = callback(globalInterceptor.response, res, state.config)
+        result = callback(globalInterceptor.response, result, state.config)
         result = getData(result as object, state.config?.business)
     }
     console.log(`request (${state.config?.url}) success, data: `, result)
     state.config?.success ? callback(state.config?.success, result) : resolve(result)
 }
 
-function _handleFailCallback(state : Partial<RequestState>, res : UniApp.GeneralCallbackResult | any, resolve : (value : unknown) => void, reject : (reason ?: any) => void) {
+function _handleFailCallback(state : Partial<RequestState>, res : UniApp.GeneralCallbackResult | any, resolve : (value : any) => void, reject : (reason ?: any) => void) {
     if (res.errMsg === 'request:fail abort') {
         return
     }
@@ -145,13 +158,13 @@ function _handleFailCallback(state : Partial<RequestState>, res : UniApp.General
     state.config?.fail ? callback(state.config?.fail, result) : reject(result)
 }
 
-function _handleCompleteCallback(state : Partial<RequestState>, res : UniApp.GeneralCallbackResult, resolve : (value : unknown) => void, reject : (reason ?: any) => void) {
+function _handleCompleteCallback(state : Partial<RequestState>, res : UniApp.GeneralCallbackResult, resolve : (value : any) => void, reject : (reason ?: any) => void) {
     callback(globalInterceptor.complete, res, state.config)
     let cost = Date.now() - state.startTime
     if (state.config?.debug) {
         console.log(`request cost in ${cost} ms of ${state.config.url}`)
     }
-    let delay = Math.min(0, (state.config?.loadingDuration || 500) - cost)
+    let delay = Math.max(0, (state.config?.loadingDuration || 500) - cost)
     setTimeout(() => uni.hideLoading(), delay)
     callback(state.config?.complete, res)
 }
@@ -160,48 +173,16 @@ function getData(data : Record<string, any>, dataPath : string | undefined | nul
     if (!dataPath) {
         return data
     }
-    return dataPath.split('.').reduce((obj, key) => obj?.[key], data) || defaultValue
+    let path = dataPath.replace(/\[(\w+)\]/g, '.$1')
+        .replace(/^\./, '')
+    return path.split('.').reduce((obj, key) => obj?.[key], data) || defaultValue
 }
 
-/**
- * 类型安全的嵌套路径提取方法
- */
-function safeGet<
-    T extends Record<string, any>,
-    P extends Path<T>,
-    D = undefined
->(
-    obj : T | null | undefined,
-    path : P,
-    defaultValue ?: D
-) : PathValue<T, P> | D {
-    // 实现逻辑与基础版本相同，但具有类型安全
-    if (obj == null || typeof obj !== 'object') {
-        return defaultValue as D;
-    }
-
-    const pathArray = (typeof path === 'string'
-        ? path
-            .replace(/\[(\w+)\]/g, '.$1')
-            .replace(/^\./, '')
-            .split('.')
-        : path) as string[];
-
-    let current : any = obj;
-
-    for (let i = 0; i < pathArray.length; i++) {
-        const key = pathArray[i];
-
-        if (current == null) {
-            return defaultValue as D;
-        }
-
-        current = current[key];
-
-        if (current === undefined && i < pathArray.length - 1) {
-            return defaultValue as D;
-        }
-    }
-
-    return current === undefined ? (defaultValue as D) : current;
+export default {
+    setConfig,
+    get,
+    post,
+    request,
+    upload,
+    getData
 }

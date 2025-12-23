@@ -22,6 +22,7 @@
 </template>
 
 <script>
+    import request from '../../uni_modules/jamling-request/js_sdk';
 export default {
     data() {
         return {
@@ -38,7 +39,7 @@ export default {
         example1(full) {
             var that = this;
             this.$request.get({
-                url: 'lunar',
+                url: 'static/success.json',
                 business: full ? null : 'data',
                 success: res => {
                     console.log('success');
@@ -56,9 +57,10 @@ export default {
         },
         async example2() {
             var that = this;
-            var res = await this.$request
+            var res = await request
                 .get({
-                    url: 'solar',
+                    baseUrl: 'http://127.0.0.1:8080/',
+                    url: 'static/success.json',
                     loadingTip: '接口请求中...'
                 })
                 .then(
