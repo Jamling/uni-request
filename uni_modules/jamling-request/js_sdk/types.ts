@@ -7,10 +7,19 @@ export type UniMpOptions = Pick<UniApp.RequestOptions, 'enableHttp2' | 'enableHt
 interface ExtGlobalOptions {
     /**请求基地址，使用/结尾*/
     baseUrl ?: string
+    /**
+     * 请求类型　json：application/json； form：application/x-www-form-urlencoded； file：multipart/form-data
+     */
     contentType ?: 'json' | 'form' | 'file'
+    /**
+     * 请求业务数据路径，支持多级，用于从响应数据中提取业务数据，默认为｀data｀。如响应数据为 { code: 0, data: { list: [] } }，则 business 可设置为 'data'
+     */
     business ?: string
+    /** 请求编码 */
     encoding ?: string
+    /** 是否开启调试模式，开启后会打印请求日志 */
     debug ?: boolean
+    /** 是否在请求失败时弹出错误提示 */
     toastError ?: boolean
     /** 请求头 */
     header ?: Record<string, any>
@@ -27,10 +36,8 @@ interface ExtGlobalOptions {
         /** 重试延迟（毫秒） */
         delay : number | ((count : number) => number)
     }
-    interceptor ?: {
-        request ?: RequestInterceptor
-
-    }
+    /** 请求拦截器 */
+    interceptor ?: Interceptor
 }
 interface ExtRequestOptions {
     /** 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示 */
@@ -41,12 +48,28 @@ interface ExtRequestOptions {
     skipInterceptorResponse ?: boolean
 }
 
+export interface Interceptor {
+    /**
+     * 请求拦截器
+     */
+    request ?: RequestInterceptor
+    /** 响应拦截器 */
+    response ?: ResponseInterceptor
+    /** 失败回调
+     */
+    error ?: (res : UniApp.GeneralCallbackResult | UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult) => void
+    /** 完成回调 */
+    complete ?: (res : UniApp.GeneralCallbackResult) => void
+}
+
 export interface RequestInterceptor {
     (config : GlobalRequestOptions) : GlobalRequestOptions | Promise<GlobalRequestOptions> | any
 }
 
+type UniResultDataType = UniApp.RequestSuccessCallbackResult['data']
+
 export interface ResponseInterceptor {
-    (res: AnyObject): AnyObject
+    (res : Record<string, any>, state : Pick<RequestState, 'isSuccess' | 'isError'>) : any
 }
 
 export type GlobalRequestOptions = UniGlobalOptions & ExtGlobalOptions
@@ -82,8 +105,6 @@ export interface RequestState<T = any> {
     config : CombineRequestOptions
     [key : string] : any
 }
-
-type CallbackOptions = Pick<UniApp.RequestOptions, 'success' | 'fail' | 'complete'> & Pick<UniApp.UploadFileOption, 'success' | 'fail' | 'complete'>
 
 interface RequestSuccessCallback {
     (res : UniApp.RequestSuccessCallbackResult) : void

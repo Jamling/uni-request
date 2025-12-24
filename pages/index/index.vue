@@ -3,6 +3,7 @@
         <button size="mini" @click="example1(false)">成功请求</button>
         <button size="mini" class="not-first" @click="example2">成功请求（Promise)</button>
         <button size="mini" class="not-first" @click="example1(true)">成功请求（返回整个业务对象）</button>
+        <button size="mini" class="not-first" @click="getImg(true)">成功请求（返回图片）</button>
         <view>
             <button size="mini" type="warn" @click="fail1">错误请求（业务错误）</button>
             <button size="mini" type="warn" class="not-first" @click="fail2">错误请求（HTTP 404）</button>
@@ -73,6 +74,14 @@ export default {
                         that.json = JSON.stringify(res);
                     }
                 );
+        },
+        getImg() {
+            request.get({
+                url: 'http://127.0.0.1:8080/static/logo.png',
+                responseType:'arraybuffer'
+            }).then(res=> {
+                console.log(res)
+            })
         },
         fail1() {
             var that = this;

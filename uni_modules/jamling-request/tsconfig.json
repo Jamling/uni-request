@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "CommonJS",
+    "declaration": true,
+    "declarationDir": "types",
+    "outDir": "dist",
+    "rootDir": "js_sdk",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "types": ["@dcloudio/types"]
+  },
+  "include": ["js_sdk/**/*"]
+}

@@ -8,8 +8,14 @@
 	],
 	"scripts": {
 		"build": "tsc",
-		"build:dts": "tsc --declaration "
+		"build:dts": "tsc --emitDeclarationOnly -p ."
 	},
+	"files": [
+		"dist",
+		"types"
+	],
+	"main": "dist/index.js",
+	"types": "types/index.d.ts",
 	"repository": "",
 	"engines": {
 		"HBuilderX": "^3.1.0",
@@ -98,8 +104,8 @@
 			}
 		}
 	},
-	"dependencies": {},
 	"devDependencies": {
+		"@dcloudio/types": "^3.4.28",
 		"typescript": "^5.9.3"
 	}
 }
