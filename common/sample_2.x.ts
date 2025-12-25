@@ -1,6 +1,6 @@
 import request from "../uni_modules/jamling-request";
 request.setConfig({
-  baseUrl: "https://api.example.com/",
+  //baseUrl: "https://api.example.com/",
   debug: true,
   toastError: true,
   interceptor: {
@@ -16,15 +16,26 @@ request.setConfig({
       }
     },
     response: (res, state) => {
-      if (res.code === 0) {
-        state.isSuccess = true;
-      } else if (res.code === 1001) {
-        state.isError = true;
+      state.isSuccess = res.code === 0;
+      if (res.code === 1001) {
         // token失效，需要重新登录
         uni.navigateTo({
           url: "/pages/loign/login",
         });
       }
     },
+    error: (res, state) => {
+      if (state.data) {
+        state.error = state.data.msg;
+      }
+      if (state.config.toastError) {
+        uni.showToast({
+          title: state.error || "请求出错",
+          icon: "none",
+        });
+      }
+    },
   },
 });
+
+export default request;

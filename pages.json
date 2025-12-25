@@ -3,14 +3,36 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "j-request"
+				"navigationBarTitleText": "网络请求"
 			}
-		}
+        },
+        {
+            "path": "pages/upload/upload",
+            "style": {
+                "navigationBarTitleText": "上传"
+            }
+        }
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
+		"navigationBarTitleText": "jamling-request",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#3cc51f",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "网络请求"
+			},
+			{
+				"pagePath": "pages/upload/upload",
+				"text": "上传"
+			}
+		]
 	}
 }

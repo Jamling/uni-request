@@ -23,21 +23,21 @@ interface ExtGlobalOptions {
     toastError ?: boolean
     /** 请求头 */
     header ?: Record<string, any>
-    /** 是否启用防抖（毫秒） */
-    debounce ?: number
-    /** 是否启用节流（毫秒） */
-    throttle ?: number
-    /** 是否立即执行（在组件挂载时） */
-    immediate ?: boolean
-    /** 是否启用重试 */
-    retry ?: {
-        /** 重试次数 */
-        count : number
-        /** 重试延迟（毫秒） */
-        delay : number | ((count : number) => number)
-    }
     /** 请求拦截器 */
     interceptor ?: Interceptor
+    // /** 是否启用防抖（毫秒） */
+    // debounce ?: number
+    // /** 是否启用节流（毫秒） */
+    // throttle ?: number
+    // /** 是否立即执行（在组件挂载时） */
+    // immediate ?: boolean
+    // /** 是否启用重试 */
+    // retry ?: {
+    //     /** 重试次数 */
+    //     count : number
+    //     /** 重试延迟（毫秒） */
+    //     delay : number | ((count : number) => number)
+    // }
 }
 interface ExtRequestOptions {
     /** 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示 */
@@ -57,7 +57,10 @@ export interface Interceptor {
     response ?: ResponseInterceptor
     /** 失败回调
      */
-    error ?: (res : UniApp.GeneralCallbackResult | UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult) => void
+    error ?: (
+        res : UniApp.GeneralCallbackResult | UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult,
+        state : Pick<RequestState, 'isSuccess' | 'isError' | 'data' | 'response' | 'error' | 'config'>
+    ) => void
     /** 完成回调 */
     complete ?: (res : UniApp.GeneralCallbackResult) => void
 }
@@ -69,22 +72,21 @@ export interface RequestInterceptor {
 type UniResultDataType = UniApp.RequestSuccessCallbackResult['data']
 
 export interface ResponseInterceptor {
-    (res : Record<string, any>, state : Pick<RequestState, 'isSuccess' | 'isError'>) : any
+    (res : Record<string, any>, state : Pick<RequestState, 'isSuccess'>) : any
 }
 
 export type GlobalRequestOptions = UniGlobalOptions & ExtGlobalOptions
 export type CombineRequestOptions = UniApp.RequestOptions & GlobalRequestOptions & ExtRequestOptions
 
 export type CombineUploadOptions = UniApp.UploadFileOption & GlobalRequestOptions & ExtRequestOptions
-
-
+export type SuccessCallbackResult = UniApp.RequestSuccessCallbackResult
 
 // 请求状态接口
 export interface RequestState<T = any> {
     /** 响应数据 */
     data ?: T | null
     /** 响应对象（原始） */
-    response ?: any | null
+    response ?: SuccessCallbackResult | null
     /** 错误信息 */
     error ?: any | null
     /** 是否正在加载 */
