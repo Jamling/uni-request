@@ -1,17 +1,73 @@
+'use strict';
+/**
+ * @typedef {Object} GlobalConfig
+ * @property {string} baseUrl - 接口基地址
+ * @property {string} [business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
+ * @property {boolean} [debug=false] - 是否开启调试模式，开启后会在控制台打印请求和响应相关信息
+ * @property {'GET'|'POST'|'PUT'|'DELETE'} [method="GET"] - 请求方法 GET|POST|PUT|DELETE
+ * @property {'json'|'form'|'file'} [contentType="json"] - 请求类型，为json(默认)，form，file
+ * @property {'json'|'text'} [dataType="json"] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
+ * @property {string} [encoding="UTF-8"] - 请求编码，默认为utf-8
+ * @property {'text'|'arraybuffer'} [responseType='text'] - 响应的数据类型
+ * @property {Object} [header] - 自定义请求头
+ * @property {Object} [data] - 请求参数
+ */
+
+/**
+ * @typedef {Object & GlobalConfig} RequestConfig
+ * @property {string} url - 接口请求地址
+ * @property {boolean} [skipInterceptorResponse=false] - 是否跳过响应过滤器，如需跳过，请置true
+ * @property {boolean} [slashAbsoluteUrl=false] - 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
+ * @property {string} [loadingTip] - 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
+ * @property {number} [loadingDuration=500] - 设置loadingTip时的最小loading显示时间
+ */
+
+/**
+ * @callback RequestInterceptor
+ * @param {RequestConfig} config - 请求配置对象
+ * @returns {RequestConfig} 返回处理后的请求配置对象
+ */
+
+/**
+ * @callback ResponseInterceptor
+ * @param {Object} response - 响应数据对象
+ * @param {RequestConfig} config - 请求配置对象
+ * @returns {Object} 返回处理后的响应数据对象
+ */
+
+/**
+ * @callback FailInterceptor
+ * @param {Object} response - 响应数据对象
+ * @param {RequestConfig} config - 请求配置对象
+ * @returns {Object} 返回处理后的响应数据对象
+ */
+
+/**
+ * @callback CompleteInterceptor
+ * @param {RequestConfig} config - 请求配置对象
+ * @param {Object} extras - 额外参数对象
+ * @param {Object} response - 响应数据对象
+ */
+
+/**
+ * @typedef {Object} Interceptor
+ * @property {RequestInterceptor} [request] - 请求拦截器，参数为请求配置对象，需返回请求配置对象
+ * @property {ResponseInterceptor} [response] - 响应拦截器，参数为响应数据对象，需返回响应数据对象
+ * @property {FailInterceptor} [fail] - 失败拦截器，参数为响应数据对象，需返回响应数据对象
+ * @property {CompleteInterceptor} [complete] - 完成拦截器，参数为请求配置对象和响应数据对象
+ */
+
 /**
  * A Request useing App network request design {@link http://ext.dcloud.net.cn/plugin?id=709}
  * @author Jamling <li.jamling@gmail.com>
  * @version 1.0.1
- * 
+ * @class
  **/
-'use strict';
 class Request {
 
     /**
      * @description 网络请求的默认配置
-     * @property {Object} config - 默认参数配置
-     * @property {string} config.baseUrl - 接口基地址
-     * @property {string} config.business - 接口响应的业务数据对象字段名，默认为data
+     * @type {GlobalConfig}
      */
     config = {
         /*返回默认为res.data*/
@@ -29,10 +85,12 @@ class Request {
         // responseType: 'text'
     }
 
+    /** @private */
     static posUrl(url) { /* 判断url是否为绝对路径 */
         return /(http|https):\/\/([\w.]+\/?)\S*/.test(url)
     }
 
+    /** @private */
     static getUrl(config) {
         let url = config.url || ''
         let abs = Request.posUrl(url);
@@ -45,6 +103,7 @@ class Request {
         return abs ? url : (config.baseUrl + url)
     }
 
+    /** @private */
     static getContentType(config) {
         var type = config.contentType || 'json'
         var charset = config.encoding || 'UTF-8'
@@ -64,8 +123,8 @@ class Request {
     }
 
     /**
-     * @property {Object} interceptor 拦截器
-     *  
+     * @description 拦截器
+     * @type {Interceptor}
      */
     interceptor = {
         /**
@@ -79,15 +138,18 @@ class Request {
     }
 
     /**
-     * @description set default request options
-     * @param {Object} config - the default options
-     * @param {string} config.baseUrl baseUrl - the base url
-     * @param {boolean} config.debug debug - enable debug to log
+     * @description 设置全局默认配置
+     * @param {RequestConfig} config - 默认配置对象
      */
     setConfig(config) {
         this.config = Object.assign(this.config, config)
     }
 
+    /**
+     * 发起网络请求
+     * @param {RequestConfig} options 
+     * @returns {Promise | RequestTask | UploadTask}
+     */
     request(options = {}) {
         var that = this;
         if (options.data === undefined) {
@@ -157,18 +219,7 @@ class Request {
     /**
      * @method
      * @description execute a get request
-     * @param {Object} options - 参数选项
-     * @param {string} options.url - 请求地址
-     * @param {string} [options.method=GET] - 请求方法 GET|POST
-     * @param {string} [options.contentType=json] - 请求类型，为json(默认)，form
-     * @param {Object} [options.data] - 请求参数
-     * @param {string} [options.encoding] - 请求编码，默认为utf-8
-     * @param {string} [options.dataType] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
-     * @param {string} [options.business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
-     * @param {string} [options.skipInterceptorResponse] - 是否跳过响应过滤器，如需跳过，请置true
-     * @param {string} [options.slashAbsoluteUrl] - 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
-     * @param {string} [options.loadingTip] - 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
-     * @param {string} [options.loadingDuration] - 设置loadingTip时的最小loading显示时间
+     * @param {RequestConfig} options - 参数选项
      * 
      * @return {Promise} promise
      * @example
@@ -188,18 +239,7 @@ class Request {
     /**
          * @method
          * @description execute a post request
-         * @param {Object} options - 参数选项
-         * @param {string} options.url - 请求地址
-         * @param {string} [options.method=POST] - 请求方法 GET|POST
-         * @param {string} [options.contentType=json] - 请求类型，为json(默认)，form
-         * @param {Object} [options.data] - 请求参数
-         * @param {string} [options.encoding] - 请求编码，默认为utf-8
-         * @param {string} [options.dataType] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
-         * @param {string} [options.business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
-         * @param {string} [options.skipInterceptorResponse] - 是否跳过响应过滤器，如需跳过，请置true
-         * @param {string} [options.slashAbsoluteUrl] - 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
-         * @param {string} [options.loadingTip] - 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
-         * @param {string} [options.loadingDuration] - 设置loadingTip时的最小loading显示时间
+         * @param {RequestConfig} options - 参数选项
          * 
          * @return {Promise} promise
          * @example
@@ -218,18 +258,7 @@ class Request {
     /**
      * @method
      * @description execute a get request
-     * @param {Object} options - 参数选项
-     * @param {string} options.url - 请求地址
-     * @param {string} [options.method=GET] - 请求方法 GET|POST
-     * @param {string} [options.contentType=json] - 请求类型，为json(默认)，form
-     * @param {Object} [options.data] - 请求参数
-     * @param {string} [options.encoding] - 请求编码，默认为utf-8
-     * @param {string} [options.dataType] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
-     * @param {string} [options.business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
-     * @param {string} [options.skipInterceptorResponse] - 是否跳过响应过滤器，如需跳过，请置true
-     * @param {string} [options.slashAbsoluteUrl] - 是否视以/开头的url为绝对地址，默认为false，此设置仅当初步判断url为非绝对地址时有效
-     * @param {string} [options.loadingTip] - 是否在请求前显示文字为参数值的loading提示，如果是，会在请求结束后自动关闭loading提示
-     * @param {string} [options.loadingDuration] - 设置loadingTip时的最小loading显示时间
+     * @param {RequestConfig} options - 参数选项
      * 
      * @return {Promise} promise
      * @example
@@ -248,9 +277,14 @@ class Request {
         return this.request(options)
     }
 
+    /** @private */
     _success = function(that, _config, res, resolve, reject) {
         if (res.statusCode >= 200 && res.statusCode <= 302) { // http ok
-            var result = res.data // 全局的拦截器
+            var result = res.data
+            if (_config.responseType === 'arraybuffer' && typeof res.data === 'ArrayBuffer') {
+                _config.success ? _config.success(result) : resolve(result)
+                return;
+            }
             var parseFileJson = _config.contentType === 'file' && typeof result === 'string' && (_config.dataType ===
                 undefined || _config.dataType === 'json')
             if (parseFileJson) {
@@ -274,6 +308,7 @@ class Request {
         that._fail(that, _config, res, resolve, reject)
     }
 
+    /** @private */
     _fail = function(that, _config, res, resolve, reject) {
         if (_config.debug) {
             console.error('response failure: ', res)
@@ -288,11 +323,8 @@ class Request {
         _config.fail ? _config.fail(result) : reject(result)
     }
 
+    /** @private */
     _prepare = function(that, _config, obj = {}) {
-        if (that.interceptor.prepare && typeof that.interceptor.prepare === 'function') {
-            that.interceptor.prepare(_config, obj)
-            return
-        }
         obj.startTime = Date.now()
         if (_config.loadingTip) {
             uni.showLoading({
@@ -311,13 +343,14 @@ class Request {
         if (_config.debug) {
             console.log('request: ', _config)
         }
-    }
-
-    _complete = function(that, _config, res, obj = {}) {
-        if (that.interceptor.complete && typeof that.interceptor.complete === 'function') {
-            that.interceptor.complete(_config, obj, res)
+        if (that.interceptor.prepare && typeof that.interceptor.prepare === 'function') {
+            that.interceptor.prepare(_config, obj)
             return
         }
+    }
+
+    /** @private */
+    _complete = function(that, _config, res, obj = {}) {
         obj.endTime = Date.now()
         if (_config.debug) {
             console.log('request completed in ' + (obj.endTime - obj.startTime) + ' ms')
@@ -335,16 +368,20 @@ class Request {
                 uni.hideLoading()
             }, diff)
         }
+        if (that.interceptor.complete && typeof that.interceptor.complete === 'function') {
+            that.interceptor.complete(_config, obj, res)
+        }
         if (_config.complete) {
             _config.complete(res)
         }
     }
 }
 /**
- * 
+ * @type {Request}
  */
 var request = new Request()
 /**
- * @module {Request} request
+ * @description Export a request instance
+ * @type {Request}
  */
 export default request

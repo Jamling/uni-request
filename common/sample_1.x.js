@@ -1,4 +1,4 @@
-import request from './common/j-request/request.js'
+import request from '../uni_modules/jamling-request/j-request/request'
 console.log(request);
 var baseUrl = 'http://api.ieclipse.cn/wnl/'
 // #ifdef H5
@@ -10,10 +10,6 @@ request.setConfig({
 })
 // 请求拦截
 request.interceptor.request = (config => {
-    // 给data添加全局请求参数uid
-    if (!config.data.uid) {
-        config.data.uid = 100
-    }
     // 给header添加全局请求参数token
     if (!config.header.token) {
         config.header.token = 'my_token'
@@ -27,8 +23,7 @@ request.interceptor.request = (config => {
 // 全局的业务拦截
 request.interceptor.response = ((res, config) => {
     if (res.code === 0) {
-        //res.success = true;
-        config.businessSuccess = true;
+        res.success = true;
     } else if (res.code === 1001) {
         // token失效，需要重新登录
         uni.navigateTo({
@@ -60,12 +55,14 @@ request.interceptor.fail = ((res, config) => {
     return ret;
 })
 
-// since 1.2.0 全局请求开始前回调，如果设置，那么内置的请求开始回调不会执行
+export default request
+
+// only 1.2.0 全局请求开始前回调，如果设置，那么内置的请求开始回调不会执行
 // request.interceptor.prepare = ((config, extra) => {
 //     console.log('global prepare');
 //     extra.start = Date.now()
 // })
-// // since 1.2.0 全局请求完成的回调，如果设置，那么内置的请求结束回调不会执行
+// only 1.2.0 全局请求完成的回调，如果设置，那么内置的请求结束回调不会执行
 // request.interceptor.complete = ((config, extra, res) => {
 //     console.log('global complete');
 //     extra.end = Date.now()

@@ -1,58 +1,59 @@
 <template>
-    <view class="content">
-        <view class="row">
-            <picker :range="methodRangle" :value="methodIndex" @change="changeMethod">{{ methodRangle[methodIndex] }}</picker>
-            <input :value="url" placeholder="请输入请求地址"></input>
-        </view>
-        <view class="row">
-            <text>快捷地址</text>
-            <picker :range="urlRangle" range-key="text" :value="urlIndex" @change="changeUrl">{{ urlRangle[urlIndex].text }}</picker>
-        </view>
-        <view class="row">
-            <text>开启Promise</text>
-            <switch :checked="promiseStyle" @change="changetStyle"></switch>
-        </view>
-        <view class="row">
-            <button size="default" type="primary" @click="sendRequest()">
-                发送请求
-            </button>
-        </view>
-        <button size="mini" @click="example1(false)">成功请求</button>
-        <button size="mini" class="not-first" @click="example2">成功请求（Promise)</button>
-        <button size="mini" class="not-first" @click="example1(true)">成功请求（返回整个业务对象）</button>
-        <button size="mini" class="not-first" @click="getImg(true)">成功请求（返回图片）</button>
-        <view>
-            <button size="mini" type="warn" class="warn" @click="fail1">业务错误：</button>
-        </view>
-        <view>
-            <button size="mini" type="warn" @click="fail1">错误请求（业务错误）</button>
-            <button size="mini" type="warn" class="not-first" @click="fail2">错误请求（HTTP 404）</button>
-            <button size="mini" type="warn" @click="fail3">访问404公司（可取消）</button>
-            <button size="mini" type="default" class="not-first" @click="cancel">取消访问404公司</button>
-        </view>
-        <view>
-            <image class="logo" :src="logo" @click="pickerImg"></image>
-            <text class="title">{{ title }}</text>
+    <view class="page panel">
+        <view class="row controls">
+            <picker :range="methodRangle" :value="methodIndex" @change="changeMethod" style="margin-right: 10px;">
+                <text class="picker-text">{{ methodRangle[methodIndex] }}</text>
+            </picker>
+            <input class="input-url" v-model="url" placeholder="请输入请求地址" />
         </view>
 
-        <view style="margin-top: 20rpx;">
-            <view style="font-weight: 800;">接口响应</view>
-            <view style="word-break: break-word;">{{ json }}</view>
+        <view class="row controls">
+            <text class="label">快捷地址</text>
+            <picker :range="urlRangle" range-key="text" :value="urlIndex" @change="changeUrl">
+                <text class="picker-text">{{ urlRangle[urlIndex].text }}</text>
+            </picker>
+        </view>
+
+        <view class="row controls">
+            <text class="label">Promise 风格</text>
+            <switch :checked="promiseStyle" @change="changetStyle" />
+            <text class="label">响应拦截</text>
+            <switch :checked="!skipInterceptorResponse" @change="skipInterceptorResponse=!skipInterceptorResponse" />
+        </view>
+        <view class="row controls">
+
+            <text class="label">Content-Type</text>
+            <picker :range="contentTypes" :value="contentTypeIndex" @change="changeContentType">
+                <text class="picker-text">{{ contentTypes[contentTypeIndex] }}</text>
+            </picker>
+        </view>
+
+        <view class="row controls" style="justify-content: space-between;">
+            <button size="mini" type="primary" @click="sendRequest">发送请求</button>
+            <button size="mini" @click="cancel">取消请求</button>
+            <button size="mini" @click="requestJsonText=responseJsonText=''">清除</button>
+        </view>
+
+        <view class="response" style="display: flex; flex-wrap: wrap;">
+            <view class="response-title picker-text label" @click="showRequestJson=true">请求参数</view>
+            <view class="response-title picker-text label" @click="showRequestJson=false">接口响应</view>
+            <scroll-view v-show="showRequestJson" class="response-body" scroll-y>
+                <text class="mono">{{ requestJsonText }}</text>
+            </scroll-view>
+            <scroll-view v-show="!showRequestJson" class="response-body" scroll-y>
+                <text class="mono">{{ responseJsonText }}</text>
+            </scroll-view>
         </view>
     </view>
 </template>
 
 <script>
-    import {
-        request
-    } from '../../uni_modules/jamling-request/dist';
-
     export default {
         data() {
             return {
-                title: '点击上面的图片选择图片上传',
-                logo: '/static/logo.png',
-                json: '',
+                showRequestJson: false,
+                requestJsonText: '',
+                responseJsonText: '',
                 task: undefined,
                 methodRangle: ['GET', 'POST', 'PUT', 'DELETE'],
                 methodIndex: 0,
@@ -79,7 +80,10 @@
                 ],
                 urlIndex: 0,
                 url: 'static/success.json',
-                promiseStyle: true
+                contentTypes: ['json', 'form', 'file'],
+                contentTypeIndex: 0,
+                promiseStyle: true,
+                skipInterceptorResponse: false
             };
         },
         methods: {
@@ -93,131 +97,57 @@
             changetStyle(e) {
                 this.promiseStyle = e.detail.value;
             },
+            changeContentType(e) {
+                this.contentTypeIndex = e.detail.value;
+            },
+            parseJSONSafe(text) {
+                if (!text || !text.trim()) return undefined;
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    uni.showToast({
+                        title: 'JSON 格式错误',
+                        icon: 'none'
+                    });
+                    return undefined;
+                }
+            },
             sendRequest() {
-                var method = this.methodRangle[this.methodIndex];
-                var url = this.urlRangle[this.urlIndex].url;
+                let options = {
+                    method: this.methodRangle[this.methodIndex],
+                    url: this.urlRangle[this.urlIndex].url,
+                    loadingTip: '请求中，请稍候...',
+                    toastError: true
+                };
+                if (this.skipInterceptorResponse) {
+                    options.business = undefined
+                }
+                if (options.url.endsWith('.png')) {
+                    options.responseType = 'arraybuffer';
+                }
                 if (this.promiseStyle) {
                     this.$request.request({
-                        method: method,
-                        url: url
+                        ...options
                     }).then(res => {
                         console.log('success (promise style)');
-                        this.json = JSON.stringify(res);
+                        this.responseJsonText = JSON.stringify(res, null, 2);
                     }).catch(res => {
                         console.log('failure (promise style)');
-                        this.json = JSON.stringify(res);
+                        this.responseJsonText = JSON.stringify(res, null, 2);
                     });
                 } else {
-                    return this.$request.request({
-                        method: method,
-                        url: url,
+                    this.task = this.$request.request({
+                        ...options,
                         success: res => {
                             console.log('success (callback style)');
-                            this.json = JSON.stringify(res);
+                            this.responseJsonText = JSON.stringify(res, null, 2);
                         },
                         fail: res => {
                             console.log('failure (callback style)');
-                            this.json = JSON.stringify(res);
+                            this.responseJsonText = JSON.stringify(res, null, 2);
                         }
                     });
                 }
-            },
-            example1(full) {
-                var that = this;
-                this.$request.get({
-                    url: 'static/success.json',
-                    business: full ? null : 'data',
-                    success: res => {
-                        console.log('success');
-                        that.json = JSON.stringify(res);
-                    },
-                    fail: res => {
-                        console.log('failure');
-                        that.json = JSON.stringify(res);
-                    },
-                    complete: res => {
-                        // since 1.2.0
-                        console.log('complete', res);
-                    }
-                });
-            },
-            async example2() {
-                var that = this;
-                var res = await this.$request
-                    .get({
-                        baseUrl: 'http://127.0.0.1:8080/',
-                        url: 'static/success.json',
-                        loadingTip: '接口请求中...'
-                    })
-                    .then(
-                        res => {
-                            console.log('success');
-                            that.json = JSON.stringify(res);
-                        },
-                        res => {
-                            console.log('failure');
-                            that.json = JSON.stringify(res);
-                        }
-                    );
-            },
-            getImg() {
-                this.$request.get({
-                    url: 'http://127.0.0.1:8080/static/logo.png',
-                    responseType: 'arraybuffer'
-                }).then(res => {
-                    console.log(res)
-                })
-            },
-            fail1() {
-                var that = this;
-                this.$request
-                    .post({
-                        url: 'static/fail_business.json',
-                        data: {
-                            date: '2019'
-                        }
-                    })
-                    .then(
-                        res => {
-                            console.log('success');
-                            that.json = JSON.stringify(res);
-                        },
-                        res => {
-                            console.log('failure');
-                            that.json = JSON.stringify(res);
-                        }
-                    );
-            },
-            fail2() {
-                var that = this;
-                this.$request
-                    .post({
-                        url: 'static/fail_not_login.json'
-                    })
-                    .then(
-                        res => {
-                            console.log('success');
-                            that.json = JSON.stringify(res);
-                        },
-                        res => {
-                            console.log('failure');
-                            that.json = JSON.stringify(res);
-                        }
-                    );
-            },
-            fail3() {
-                var that = this;
-                this.task = this.$request.get({
-                    url: 'https://www.google.com',
-                    loadingTip: '正在连接404公司...',
-                    success: (res => {
-                        console.log('喔，竟然能访问404公司！');
-                    }),
-                    fail: (res => {
-                        console.error('访问不了是正常的，不然为啥叫404公司')
-                    })
-                })
-                console.log('task', this.task);
             },
             cancel() {
                 if (this.task && this.task.abort) {
@@ -227,99 +157,144 @@
                 }
                 return false;
             },
-            pickerImg() {
-                var that = this;
-                uni.chooseImage({
-                    count: 1,
-                    success: function(res) {
-                        console.log(res);
-                        var path = res.tempFilePaths[0];
-                        that.upload(path);
-                    }
-                });
-            },
-            upload(path) {
-                var that = this;
-                var tokenUrl = 'http://api.ieclipse.cn/smartqq/upload/token';
-                // #ifdef H5
-                tokenUrl = '/smartqq/upload/token';
-                // #endif
-                that.$request
-                    .get({
-                        url: tokenUrl,
-                        slashAbsoluteUrl: true // 如果有大量的类似请求，可以配置全局参数
-                    })
-                    .then(res => {
-                        that.json = JSON.stringify(res);
-                        var uploadTask = that.$request
-                            .upload({
-                                url: 'http://upload.qiniu.com',
-                                filePath: path,
-                                name: 'file',
-                                business: null,
-                                skipInterceptorResponse: true,
-                                data: {
-                                    token: res.token
-                                },
-                                progress: (res2, task) => {
-                                    let p = '上传进度: ' + res2.totalBytesSent + '/' + res2
-                                        .totalBytesExpectedToSend + ' (' + res2.progress + '%)';
-                                    this.json = p;
-                                    console.log(p);
-                                    // 测试条件，取消上传任务。
-                                    if (res2.progress > 50) {
-                                        //uploadTask.abort();
-                                    }
-                                }
-                            })
-                            .then(res2 => {
-                                console.log(res2);
-                                that.logo = res.domain + '/' + res2.key;
-                                console.log(that.logo);
-                            })
-                            .catch(res2 => {
-                                console.log(res2);
-                            });
-                    });
-            }
         },
         onBackPress: () => {
-            return this.cancel();
+            return false;
+        },
+        onLoad() {
+            if (this.$request.version) {
+
+            } else {
+                this.$request.interceptor.prepare = (config) => {
+                    this.requestJsonText = JSON.stringify(config, null, 2)
+                }
+                this.$request.interceptor.complete = (config) => {
+
+                }
+            }
         }
     };
 </script>
 
-<style>
-    .content {
+<style lang="scss">
+    .page {
+        //padding: 24rpx;
+        background: #f5f7fa;
+        min-height: 100vh;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 8rpx;
         padding: 20rpx;
-        display: block;
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: wrap;
-        /* justify-content: center; */
+        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
     }
 
     .row {
         display: flex;
         align-items: center;
-        gap: 10px;
+        min-height: 32px;
     }
 
-    .logo {
-        height: 200upx;
-        width: 200upx;
-        margin-top: 20upx;
-        margin-left: auto;
+    .controls {
+        display: flex;
+        gap: 12rpx;
+        align-items: center;
+        margin-bottom: 12rpx;
+        border-bottom: 1px solid #e6eaf0;
+        padding-bottom: 12rpx;
+    }
+
+    .picker-text {
+        padding: 8rpx 12rpx;
+        background: #eef2f7;
+        border-radius: 6rpx;
+    }
+
+    .input-url {
+        flex: 1;
+        padding: 10rpx;
+        border: 1rpx solid #eee;
+        border-radius: 6rpx;
+    }
+
+    .label {
         margin-right: auto;
-        margin-bottom: 0upx;
+        color: #666;
     }
 
-    .title {
-        font-size: 36upx;
-        display: block;
+    .options {
+        display: flex;
+        gap: 20rpx;
+        margin: 12rpx 0;
     }
 
-    .not-first {
-        margin-left: 20rpx;
+    .editor {
+        display: flex;
+        gap: 12rpx;
+        margin: 12rpx 0;
+    }
+
+    .editor-col {
+        flex: 1;
+    }
+
+    .editor-title {
+        font-weight: 700;
+        margin-bottom: 6rpx;
+    }
+
+    .textarea {
+        height: 180rpx;
+        border: 1rpx solid #eee;
+        border-radius: 6rpx;
+        padding: 10rpx;
+        font-family: monospace;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12rpx;
+        margin-top: 10rpx;
+    }
+
+    .response {
+        margin-top: 14rpx;
+    }
+
+    .response-title {
+        font-weight: 800;
+        margin-bottom: 6rpx;
+    }
+
+    .response-body {
+        height: 240px;
+        background: #0f1724;
+        color: #e6eef8;
+        padding: 12rpx;
+        border-radius: 6rpx;
+    }
+
+    .mono {
+        font-family: monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .status-row {
+        margin-top: 8rpx;
+        color: #666;
+    }
+
+    .status-pending {
+        color: #ff9900;
+    }
+
+    .status-success {
+        color: #18a058;
+    }
+
+    .status-error {
+        color: #d9534f;
     }
 </style>
