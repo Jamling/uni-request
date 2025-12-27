@@ -1,8 +1,8 @@
 {
 	"id": "jamling-request",
-	"displayName": "jamling-request",
-	"version": "1.0.0",
-	"description": "jamling-request",
+	"displayName": "j-request",
+	"version": "1.3.0",
+	"description": "j-request",
 	"keywords": [
 		"jamling-request"
 	],
@@ -11,8 +11,7 @@
 		"build:dts": "tsc --emitDeclarationOnly -p ."
 	},
 	"files": [
-		"dist",
-		"types"
+		"j-request"
 	],
 	"main": "dist/index.js",
 	"types": "types/index.d.ts",

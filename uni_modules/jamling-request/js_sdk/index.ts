@@ -231,9 +231,6 @@ function _handleSuccessCallback<T>(
 
   if (!state.config?.skipInterceptorResponse && typeof result === "object") {
     callback(globalInterceptor.response, result, state);
-    if (state.isSuccess) {
-      result = getData(result as object, state.config?.business);
-    }
   } else if (state.config?.debug) {
     state.config?.debug &&
       console.debug(
@@ -241,7 +238,8 @@ function _handleSuccessCallback<T>(
         state.config?.skipInterceptorResponse
       );
   }
-  if (state.isSuccess) {
+  if (state.config?.skipInterceptorResponse || state.isSuccess) {
+    result = getData(result as object, state.config?.business);
     state.isEmpty = isEmpty(result);
     console.log(`request (${state.config?.url}) success, data: `, result);
     callback(state.config?.success || resolve, result);

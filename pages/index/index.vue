@@ -100,19 +100,12 @@
             changeContentType(e) {
                 this.contentTypeIndex = e.detail.value;
             },
-            parseJSONSafe(text) {
-                if (!text || !text.trim()) return undefined;
-                try {
-                    return JSON.parse(text);
-                } catch (e) {
-                    uni.showToast({
-                        title: 'JSON 格式错误',
-                        icon: 'none'
-                    });
-                    return undefined;
-                }
+            displayResult(res) {
+                this.responseJsonText = JSON.stringify(res, null, 2);
             },
             sendRequest() {
+                this.task = null
+                this.requestJsonText = this.responseJsonText = ''
                 let options = {
                     method: this.methodRangle[this.methodIndex],
                     url: this.urlRangle[this.urlIndex].url,
@@ -130,21 +123,21 @@
                         ...options
                     }).then(res => {
                         console.log('success (promise style)');
-                        this.responseJsonText = JSON.stringify(res, null, 2);
+                        this.displayResult(res)
                     }).catch(res => {
                         console.log('failure (promise style)');
-                        this.responseJsonText = JSON.stringify(res, null, 2);
+                        this.displayResult(res)
                     });
                 } else {
                     this.task = this.$request.request({
                         ...options,
                         success: res => {
                             console.log('success (callback style)');
-                            this.responseJsonText = JSON.stringify(res, null, 2);
+                            this.displayResult(res)
                         },
                         fail: res => {
                             console.log('failure (callback style)');
-                            this.responseJsonText = JSON.stringify(res, null, 2);
+                            this.displayResult(res)
                         }
                     });
                 }

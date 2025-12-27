@@ -1,6 +1,7 @@
+import request from './common/sample_1.x'
+// #ifndef VUE3
 import Vue from 'vue'
 import App from './App'
-import request from './common/sample_2.x'
 
 /**
  * Assign the request to global VUE.
@@ -17,3 +18,16 @@ const app = new Vue({
     ...App
 })
 app.$mount()
+// #endif
+
+// #ifdef VUE3
+import { createSSRApp } from 'vue'
+import App from './App.vue'
+export function createApp() {
+  const app = createSSRApp(App)
+  app.config.globalProperties.$request = request
+  return {
+    app
+  }
+}
+// #endif

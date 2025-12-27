@@ -13,12 +13,13 @@
             <switch :checked="compress" @change="compress = !compress" />
             
         </view>
-        <view class="row">
-            
+        <view class="row" v-if="filePath">
+            <image :src="filePath" style="width: 100px; height: 100px;"></image>
         </view>
         <view class="row controls" style="justify-content: space-between;">
-            <button size="mini" type="primary" @click="pickerImg()">发送请求</button>
+            <button size="mini" type="primary" @click="pickerImg()">选择文件</button>
             <button size="mini" @click="cancel">取消请求</button>
+            <button size="mini" @click="retryUpload">重新上传</button>
             <button size="mini" @click="requestJsonText=responseJsonText=''">清除</button>
         </view>
 
@@ -54,7 +55,8 @@
                 url: 'https://unidemo.dcloud.net.cn/upload',
                 promiseStyle: true,
                 pickCount: 1,
-                compress: true
+                compress: true,
+                filePath: ''
             };
         },
         methods: {
@@ -76,6 +78,9 @@
                 }
                 return false;
             },
+            displayResult(res) {
+                this.responseJsonText = JSON.stringify(res, null, 2);
+            },
             pickerImg() {
                 var that = this;
                 uni.chooseImage({
@@ -85,14 +90,24 @@
                     success: function(res) {
                         console.log(res);
                         var path = res.tempFilePaths[0];
+                        that.filePath = path;
                         that.upload(path);
                     }
                 });
             },
+            retryUpload() {
+                if (!this.filePath) {
+                    uni.showToast({
+                        title: '请先选择图片上传',
+                        icon: 'none'
+                    });
+                    return;
+                }
+                this.upload(this.filePath);
+            },
             upload(path) {
                 var that = this;
-
-                var uploadTask = that.$request
+                this.task = that.$request
                     .upload({
                         url: this.url,
                         filePath: path,
@@ -100,12 +115,12 @@
                         business: null,
                         skipInterceptorResponse: true,
                         data: {
-                            
+                            foo: 'bar'
                         },
                         progress: (res2, task) => {
                             let p = '上传进度: ' + res2.totalBytesSent + '/' + res2
                                 .totalBytesExpectedToSend + ' (' + res2.progress + '%)';
-                            this.json = p;
+                            this.responseJsonText = p;
                             console.log(p);
                             // 测试条件，取消上传任务。
                             if (res2.progress > 50) {
@@ -115,14 +130,26 @@
                     })
                     .then(res2 => {
                         console.log(res2);
-                        this.responseJsonText = JSON.stringify(res2, null, 2);
+                        this.displayResult(res2);
                     })
                     .catch(res2 => {
                         console.log(res2);
-                        this.responseJsonText = JSON.stringify(res2, null, 2);
+                        this.displayResult(res2);
                     });
             }
         },
+        onLoad() {
+            if (this.$request.version) {
+
+            } else {
+                this.$request.interceptor.prepare = (config) => {
+                    this.requestJsonText = JSON.stringify(config, null, 2)
+                }
+                this.$request.interceptor.complete = (config) => {
+
+                }
+            }
+        }
     };
 </script>
 
