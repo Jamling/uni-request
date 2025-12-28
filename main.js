@@ -1,4 +1,4 @@
-import request from './common/sample_1.x'
+import request from './common/sample_2.x'
 // #ifndef VUE3
 import Vue from 'vue'
 import App from './App'

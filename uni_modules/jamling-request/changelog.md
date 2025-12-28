@@ -1,11 +1,10 @@
 #jamling-request - 更新日志
 
-## 1.3.0 (2025-12-27)
+## 1.3.0（2025-12-27）
 - 支持uni_modules，使用ES6规范重写
 - 填完了获取图形验证码的坑
 - 修复未返回UploadTask|RequestTask的Bug
 - 更加完整的JSDoc，uni-app项目为JS和TS语言，代码提示一致
-
 ## 1.2.0（2019-10-10）
 - 添加请求开始prepare和请求结束complete回调
 

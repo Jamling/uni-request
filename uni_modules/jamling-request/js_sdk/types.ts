@@ -55,12 +55,13 @@ export interface Interceptor {
     request ?: RequestInterceptor
     /** 响应拦截器 */
     response ?: ResponseInterceptor
-    /** 失败回调
-     */
+    /** 失败拦截器 */
     error ?: (
         res : UniApp.GeneralCallbackResult | UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult,
         state : Pick<RequestState, 'isSuccess' | 'isError' | 'data' | 'response' | 'error' | 'config'>
     ) => void
+    /** 发送前的回调 */
+    prepare ?: (options : UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult) => void
     /** 完成回调 */
     complete ?: (res : UniApp.GeneralCallbackResult) => void
 }
@@ -79,7 +80,7 @@ export type GlobalRequestOptions = UniGlobalOptions & ExtGlobalOptions
 export type CombineRequestOptions = UniApp.RequestOptions & GlobalRequestOptions & ExtRequestOptions
 
 export type CombineUploadOptions = UniApp.UploadFileOption & GlobalRequestOptions & ExtRequestOptions
-export type SuccessCallbackResult = UniApp.RequestSuccessCallbackResult
+export type SuccessCallbackResult = UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult
 
 // 请求状态接口
 export interface RequestState<T = any> {
@@ -104,7 +105,7 @@ export interface RequestState<T = any> {
     /** 请求取消函数 */
     abort ?: (() => void) | null
     /** 请求配置 */
-    config : CombineRequestOptions
+    config : CombineRequestOptions | CombineUploadOptions
     [key : string] : any
 }
 

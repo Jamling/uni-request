@@ -140,7 +140,9 @@
         },
         onLoad() {
             if (this.$request.version) {
-
+                this.$request.interceptor.prepare = (config) => {
+                    this.requestJsonText = JSON.stringify(config, null, 2)
+                }
             } else {
                 this.$request.interceptor.prepare = (config) => {
                     this.requestJsonText = JSON.stringify(config, null, 2)
