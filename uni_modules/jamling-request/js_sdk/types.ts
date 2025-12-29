@@ -56,7 +56,7 @@ export interface Interceptor {
     /** 响应拦截器 */
     response ?: ResponseInterceptor
     /** 失败拦截器 */
-    error ?: (
+    fail ?: (
         res : UniApp.GeneralCallbackResult | UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult,
         state : Pick<RequestState, 'isSuccess' | 'isError' | 'data' | 'response' | 'error' | 'config'>
     ) => void

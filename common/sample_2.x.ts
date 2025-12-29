@@ -24,7 +24,7 @@ request.interceptor.response = (res, state) => {
     });
   }
 }
-request.interceptor.error = (res, state) => {
+request.interceptor.fail = (res, state) => {
   if (state.data) {
     state.error = state.data.msg;
   }

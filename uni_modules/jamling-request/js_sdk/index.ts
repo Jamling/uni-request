@@ -40,13 +40,21 @@ export function setMPConfig(config : UniMpOptions) : void {
   Object.assign(globalOptions, config);
 }
 
-export function get(options : CombineRequestOptions) {
+export function get<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
   options.method = "GET";
-  return request(options);
+  return request<T>(options);
 }
-export function post(options : CombineRequestOptions) {
+export function post<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
   options.method = "POST";
-  return request(options);
+  return request<T>(options);
+}
+export function put<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
+  options.method = "PUT";
+  return request<T>(options);
+}
+export function del<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
+  options.method = "DELETE";
+  return request<T>(options);
 }
 /**
  * 发起网络请求
@@ -84,10 +92,10 @@ export function request<T = any>(
     let task = uni.request({
       ..._options,
       success: (res : UniApp.RequestSuccessCallbackResult) => {
-        _handleSuccessCallback(state, res, null, null);
+        _handleSuccessCallback<T>(state, res, null, null);
       },
       fail: (res : UniApp.GeneralCallbackResult) => {
-        _handleFailCallback(state, res, null, null);
+        _handleFailCallback<T>(state, res, null, null);
       },
       complete: (res : UniApp.GeneralCallbackResult) => {
         _handleCompleteCallback(state, res, null, null);
@@ -137,10 +145,10 @@ export function upload<T = any>(options : CombineUploadOptions)
     let task = uni.uploadFile({
       ..._options,
       success: (res : UniApp.UploadFileSuccessCallbackResult) => {
-        _handleSuccessCallback(state, res, null, null);
+        _handleSuccessCallback<T>(state, res, null, null);
       },
       fail: (res : UniApp.GeneralCallbackResult) => {
-        _handleFailCallback(state, res, null, null);
+        _handleFailCallback<T>(state, res, null, null);
       },
       complete: (res : UniApp.GeneralCallbackResult) => {
         _handleCompleteCallback(state, res, null, null);
@@ -150,9 +158,9 @@ export function upload<T = any>(options : CombineUploadOptions)
   }
 
   let promise = new Promise<T>((resolve, reject) => {
-    let task = uni.request({
+    let task = uni.uploadFile({
       ..._options,
-      success: (res : UniApp.RequestSuccessCallbackResult) => {
+      success: (res : UniApp.UploadFileSuccessCallbackResult) => {
         _handleSuccessCallback<T>(state, res, resolve, reject);
       },
       fail: (res : UniApp.GeneralCallbackResult) => {
@@ -310,7 +318,7 @@ function _handleFailCallback<T>(
     state.config?.debug && console.log(`request (${state.config?.url}) abort, abort called? `);
     return;
   }
-  callback(globalInterceptor.error, res, state);
+  callback(globalInterceptor.fail, res, state);
   callback(state.config?.fail || reject, res);
 }
 
@@ -352,6 +360,8 @@ export default {
   setConfig,
   get,
   post,
+  put,
+  delete: del,
   request,
   upload,
   getData,

@@ -4,6 +4,7 @@
  * @property {string} baseUrl - 接口基地址
  * @property {string} [business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
  * @property {boolean} [debug=false] - 是否开启调试模式，开启后会在控制台打印请求和响应相关信息
+ * @property {boolean} [toastError=false] - 是否使用Toast提示网络错误信息
  * @property {'json'|'form'|'file'} [contentType="json"] - 请求类型，为json(默认)，form，file
  * @property {'json'|'text'} [dataType="json"] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
  * @property {string} [encoding="UTF-8"] - 请求编码，默认为utf-8
@@ -22,6 +23,7 @@
  * @property {string} [baseUrl] - 接口基地址
  * @property {string} [business] - 接口响应的业务数据对象字段名，默认为data，如果返回整个业务对象，则需要设置为undefined
  * @property {boolean} [debug=false] - 是否开启调试模式，开启后会在控制台打印请求和响应相关信息
+ * @property {boolean} [toastError=false] - 是否使用Toast提示网络错误信息
  * @property {'json'|'form'|'file'} [contentType="json"] - 请求类型，为json(默认)，form，file
  * @property {'json'|'text'} [dataType="json"] - 如果设为 json（默认），会尝试对返回的数据做一次 JSON.parse
  * @property {string} [encoding="UTF-8"] - 请求编码，默认为utf-8
