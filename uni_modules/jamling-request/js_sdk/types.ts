@@ -1,7 +1,7 @@
 /** 允许定义的uni-app全局选项 */
-type UniGlobalOptions = Omit<UniApp.RequestOptions, 'url' | 'data' | 'success' | 'fail' | 'complete'>
+type UniGlobalOptions = Omit<UniApp.RequestOptions, 'url' | 'data' | 'success' | 'fail' | 'complete'>;
 /** 允许定义的适用于小程序等uni-app全局选项 */
-export type UniMpOptions = Pick<UniApp.RequestOptions, 'enableHttp2' | 'enableHttpDNS' | 'enableQuic' | 'enableCache' | 'httpDNSServiceId' | 'forceCellularNetwork' | 'enableCookie' | 'cloudCache' | 'defer'>
+type UniMpOptions = Pick<UniApp.RequestOptions, 'enableHttp2' | 'enableHttpDNS' | 'enableQuic' | 'enableCache' | 'httpDNSServiceId' | 'forceCellularNetwork' | 'enableCookie' | 'cloudCache' | 'defer'>
 
 /**本库定义的额外全局选项*/
 interface ExtGlobalOptions {
@@ -46,6 +46,7 @@ interface ExtRequestOptions {
     loadingDuration ?: number,
     /** 是否跳过响应过滤器，如需跳过，请置true */
     skipInterceptorResponse ?: boolean
+    [key : string] : any
 }
 
 export interface Interceptor {
@@ -107,10 +108,6 @@ export interface RequestState<T = any> {
     /** 请求配置 */
     config : CombineRequestOptions | CombineUploadOptions
     [key : string] : any
-}
-
-interface RequestSuccessCallback {
-    (res : UniApp.RequestSuccessCallbackResult) : void
 }
 
 type PathImpl<T, K extends keyof T> =
