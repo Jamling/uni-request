@@ -43,6 +43,11 @@ class Request {
     Object.assign(this.interceptor, config.interceptor);
   }
 
+  /**
+   * 发起GET请求，携带的data会转换为查询字符串
+   * @param options CombineRequestOptions
+   * @returns UniApp.RequestTask | Promise<T>
+   */
   get<T = any>(
     options : CombineRequestOptions
   ) : UniApp.RequestTask | Promise<T> {
@@ -50,6 +55,11 @@ class Request {
     return this.request<T>(options);
   }
 
+  /**
+   * 发起POST请求
+   * @param options CombineRequestOptions
+   * @returns UniApp.RequestTask | Promise<T>
+   */
   post<T = any>(
     options : CombineRequestOptions
   ) : UniApp.RequestTask | Promise<T> {
@@ -57,6 +67,11 @@ class Request {
     return this.request<T>(options);
   }
 
+  /**
+   * 发起PUT请求
+   * @param options CombineRequestOptions
+   * @returns UniApp.RequestTask | Promise<T>
+   */
   put<T = any>(
     options : CombineRequestOptions
   ) : UniApp.RequestTask | Promise<T> {
@@ -64,6 +79,11 @@ class Request {
     return this.request<T>(options);
   }
 
+  /**
+   * 发起DELETE请求，请求data可通过deleteDataToUrl选项配置为携带在url查询字符串中
+   * @param options CombineRequestOptions
+   * @returns UniApp.RequestTask | Promise<T>
+   */
   delete<T = any>(
     options : CombineRequestOptions
   ) : UniApp.RequestTask | Promise<T> {
@@ -128,15 +148,16 @@ class Request {
     let state : Partial<RequestState> = {
       config: _options,
       startTime: Date.now(),
+      isLoading: true,
     };
 
     if (_options.success && typeof _options.success === "function") {
-      let task = this.execute<T>(options, method, state, null, null);
+      let task = this.execute<T>(_options, method, state, null, null);
       return task;
     }
 
     let promise = new Promise<T>((resolve, reject) => {
-      let task = this.execute<T>(options, method, state, resolve, reject);
+      let task = this.execute<T>(_options, method, state, resolve, reject);
       state.abort = task.abort;
     });
     return promise;
@@ -187,6 +208,7 @@ class Request {
       }
       options.dataType = "arraybuffer";
     }
+    let hasData = "data" in options && typeof options.data === "object";
     let contentType : ContentType = [null, null];
     switch (options.contentType) {
       case "json":
@@ -201,7 +223,7 @@ class Request {
           options.debug && console.warn("文件上传，method已自动设置为POST");
           options.method = "POST";
         }
-        if (options.data && typeof options === "object") {
+        if (hasData) {
           options.debug && console.warn("文件上传，data参数已自动转为formData");
           let data = options.data as object;
           options.formData = {
@@ -238,10 +260,20 @@ class Request {
       }
       options.url = options.baseUrl + options.url;
     }
+
     if (options.loadingTip) {
       uni.showLoading({
         title: options.loadingTip,
       });
+    }
+    // DELETE请求将data参数合并到url查询字符串
+    const dataToUrl = hasData && (options.method === "GET" || (options.method === "DELETE" && options.deleteDataToUrl));
+    if (dataToUrl) {
+      const urlSearchParams = new URLSearchParams(options.data).toString();
+      const len = options.url.indexOf("?");
+      options.url +=
+        (len === -1 ? "?" : "&") + urlSearchParams;
+      delete options.data;
     }
   }
 
@@ -252,7 +284,7 @@ class Request {
     reject : RejectType
   ) {
     // TODO handle MP POST redirect
-    if (res.statusCode < 200 || res.statusCode >= 300) {
+    if (res.statusCode < 200 || res.statusCode > 305) {
       this._handleFailCallback(state, res, resolve, reject);
       return;
     }
@@ -303,6 +335,7 @@ class Request {
     }
     state.config?.debug &&
       console.warn("请求未标记为成功，跳过 success 回调，进入 fail 处理流程");
+      state.data = result;
     this._handleFailCallback<T>(state, result, resolve, reject);
   }
 
@@ -329,6 +362,7 @@ class Request {
     resolve : ResolveType<T>,
     reject : RejectType
   ) {
+    state.isFinished = true;
     this.callback(this.interceptor.complete, res, state);
     let cost = Date.now() - state.startTime;
     state.config?.debug &&

@@ -21,6 +21,8 @@ interface ExtGlobalOptions {
     debug ?: boolean
     /** 是否在请求失败时弹出错误提示 */
     toastError ?: boolean
+    /** 是否将DELETE请求参数合并到url查询字符串，适用于DELETE请求不支持携带body的后台服务 */
+    deleteDataToUrl ?: boolean
     /** 请求头 */
     header ?: Record<string, any>
     /** 请求拦截器 */
@@ -62,7 +64,7 @@ export interface Interceptor {
         state : Pick<RequestState, 'isSuccess' | 'isError' | 'data' | 'response' | 'error' | 'config'>
     ) => void
     /** 发送前的回调 */
-    prepare ?: (options : UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult) => void
+    prepare ?: (options : CombineRequestOptions | CombineUploadOptions) => void
     /** 完成回调 */
     complete ?: (res : UniApp.GeneralCallbackResult) => void
 }
