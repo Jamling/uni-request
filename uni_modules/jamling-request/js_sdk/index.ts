@@ -40,19 +40,27 @@ export function setMPConfig(config : UniMpOptions) : void {
   Object.assign(globalOptions, config);
 }
 
-export function get<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
+export function get<T = any>(
+  options : CombineRequestOptions
+) : UniApp.RequestTask | Promise<T> {
   options.method = "GET";
   return request<T>(options);
 }
-export function post<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
+export function post<T = any>(
+  options : CombineRequestOptions
+) : UniApp.RequestTask | Promise<T> {
   options.method = "POST";
   return request<T>(options);
 }
-export function put<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
+export function put<T = any>(
+  options : CombineRequestOptions
+) : UniApp.RequestTask | Promise<T> {
   options.method = "PUT";
   return request<T>(options);
 }
-export function del<T = any>(options : CombineRequestOptions) : UniApp.RequestTask | Promise<T> {
+export function del<T = any>(
+  options : CombineRequestOptions
+) : UniApp.RequestTask | Promise<T> {
   options.method = "DELETE";
   return request<T>(options);
 }
@@ -79,100 +87,77 @@ export function del<T = any>(options : CombineRequestOptions) : UniApp.RequestTa
 export function request<T = any>(
   options : CombineRequestOptions
 ) : UniApp.RequestTask | Promise<T> {
-  let _options : CombineRequestOptions = { ...globalOptions, ...options };
+  return send<T>(options, "request");
+}
+
+export function upload<T = any>(
+  options : CombineUploadOptions
+) : UniApp.UploadTask | Promise<T> {
+  if (options.contentType !== "file") {
+    options.contentType = "file";
+    options.debug && console.warn("文件上传contentType已自动修改为file");
+  }
+  if (options.method !== "POST") {
+    options.method = "POST";
+    options.debug && console.warn("文件上传method已自动修改为POST");
+  }
+  return send<T>(options, "uploadFile") as UniApp.UploadTask | Promise<T>;
+}
+
+function send<T>(
+  options : CombineRequestOptions | CombineUploadOptions,
+  method : "request" | "uploadFile" = "request"
+) : Promise<T> | UniApp.RequestTask | UniApp.UploadTask {
+  let _options : CombineRequestOptions | CombineUploadOptions = {
+    ...globalOptions,
+    ...options,
+  };
   callback(globalInterceptor.request, _options);
   handleRequestOptions(_options);
-  callback(globalInterceptor.prepare, _options)
+  callback(globalInterceptor.prepare, _options);
   let state : Partial<RequestState> = {
     config: _options,
     startTime: Date.now(),
   };
 
   if (_options.success && typeof _options.success === "function") {
-    let task = uni.request({
-      ..._options,
-      success: (res : UniApp.RequestSuccessCallbackResult) => {
-        _handleSuccessCallback<T>(state, res, null, null);
-      },
-      fail: (res : UniApp.GeneralCallbackResult) => {
-        _handleFailCallback<T>(state, res, null, null);
-      },
-      complete: (res : UniApp.GeneralCallbackResult) => {
-        _handleCompleteCallback(state, res, null, null);
-      },
-    }) as any as UniApp.RequestTask;
+    let task = execute<T>(options, method, state, null, null);
     return task;
   }
 
   let promise = new Promise<T>((resolve, reject) => {
-    let task = uni.request({
-      ..._options,
-      success: (res : UniApp.RequestSuccessCallbackResult) => {
-        _handleSuccessCallback<T>(state, res, resolve, reject);
-      },
-      fail: (res : UniApp.GeneralCallbackResult) => {
-        _handleFailCallback<T>(state, res, resolve, reject);
-      },
-      complete: (res : UniApp.GeneralCallbackResult) => {
-        _handleCompleteCallback(state, res, resolve, reject);
-      },
-    }) as any as UniApp.RequestTask;
+    let task = execute<T>(options, method, state, resolve, reject);
     state.abort = task.abort;
   });
   return promise;
 }
 
-export function upload<T = any>(options : CombineUploadOptions)
-  : UniApp.UploadTask | Promise<T> {
-  let _options : CombineUploadOptions = { ...globalOptions, ...options };
-  if (_options.contentType !== 'file') {
-    _options.contentType = "file";
-    _options.debug && console.warn('文件上传contentType已自动修改为file')
-  }
-  if (_options.method !== 'POST') {
-    _options.method = 'POST';
-    _options.debug && console.warn('文件上传method已自动修改为POST')
-  }
-  callback(globalInterceptor.request, _options);
-  handleRequestOptions(_options);
-  callback(globalInterceptor.prepare, _options)
-  let state : Partial<RequestState> = {
-    config: _options,
-    startTime: Date.now(),
+function execute<T>(
+  options : CombineRequestOptions | CombineUploadOptions,
+  method : "request" | "uploadFile" = "request",
+  state : Partial<RequestState>,
+  resolve : ResolveType<T>,
+  reject : RejectType
+) : UniApp.RequestTask | UniApp.UploadTask {
+  let _options : CombineRequestOptions | CombineUploadOptions = {
+    ...options,
+    success: (
+      res : UniApp.UploadFileSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult
+    ) => {
+      _handleSuccessCallback<T>(state, res, resolve, reject);
+    },
+    fail: (res : UniApp.GeneralCallbackResult) => {
+      _handleFailCallback<T>(state, res, resolve, reject);
+    },
+    complete: (res : UniApp.GeneralCallbackResult) => {
+      _handleCompleteCallback(state, res, resolve, reject);
+    },
   };
-
-  if (_options.success && typeof _options.success === "function") {
-    let task = uni.uploadFile({
-      ..._options,
-      success: (res : UniApp.UploadFileSuccessCallbackResult) => {
-        _handleSuccessCallback<T>(state, res, null, null);
-      },
-      fail: (res : UniApp.GeneralCallbackResult) => {
-        _handleFailCallback<T>(state, res, null, null);
-      },
-      complete: (res : UniApp.GeneralCallbackResult) => {
-        _handleCompleteCallback(state, res, null, null);
-      },
-    }) as any as UniApp.UploadTask;
-    return task;
+  let task = callback(uni[method], _options);
+  if (method === "uploadFile") {
+    return task as UniApp.UploadTask;
   }
-
-  let promise = new Promise<T>((resolve, reject) => {
-    let task = uni.uploadFile({
-      ..._options,
-      success: (res : UniApp.UploadFileSuccessCallbackResult) => {
-        _handleSuccessCallback<T>(state, res, resolve, reject);
-      },
-      fail: (res : UniApp.GeneralCallbackResult) => {
-        _handleFailCallback<T>(state, res, resolve, reject);
-      },
-      complete: (res : UniApp.GeneralCallbackResult) => {
-        _handleCompleteCallback(state, res, resolve, reject);
-      },
-    }) as any as UniApp.RequestTask;
-    state.abort = task.abort;
-  });
-  return promise;
+  return task as UniApp.RequestTask;
 }
 
 function callback(fn : any, ...args : any[]) {
@@ -218,11 +203,12 @@ function handleRequestOptions(
       }
       break;
     default:
-      options.debug && console.warn("unsupported content type : " + options.contentType);
+      options.debug &&
+        console.warn("unsupported content type : " + options.contentType);
       break;
   }
 
-  contentType[1] = options.encoding ? 'charset=' + options.encoding : '';
+  contentType[1] = options.encoding ? "charset=" + options.encoding : "";
   if (contentType[0]) {
     options.header["Content-Type"] = contentType.join(";");
   }
@@ -297,7 +283,8 @@ function _handleSuccessCallback<T>(
   if (state.config?.skipInterceptorResponse || state.isSuccess) {
     result = getData(result as object, state.config?.business);
     state.isEmpty = isEmpty(result);
-    state.config?.debug && console.log(`request (${state.config?.url}) success, data: `, result);
+    state.config?.debug &&
+      console.log(`request (${state.config?.url}) success, data: `, result);
     callback(state.config?.success || resolve, result);
     return;
   }
@@ -315,7 +302,8 @@ function _handleFailCallback<T>(
   state.response = res;
   state.error = res.errMsg;
   if (res.errMsg === "request:fail abort") {
-    state.config?.debug && console.log(`request (${state.config?.url}) abort, abort called? `);
+    state.config?.debug &&
+      console.log(`request (${state.config?.url}) abort, abort called? `);
     return;
   }
   callback(globalInterceptor.fail, res, state);
@@ -330,7 +318,8 @@ function _handleCompleteCallback<T>(
 ) {
   callback(globalInterceptor.complete, res, state);
   let cost = Date.now() - state.startTime;
-  state.config?.debug && console.debug(`request (${state.config?.url}) cost in ${cost} ms`);
+  state.config?.debug &&
+    console.debug(`request (${state.config?.url}) cost in ${cost} ms`);
   let delay = Math.max(0, (state.config?.loadingDuration || 500) - cost);
   setTimeout(() => uni.hideLoading(), delay);
   callback(state.config?.complete, res);
@@ -354,7 +343,7 @@ function isEmpty(data : any) : boolean {
   if (typeof data === "object") return Object.keys(data).length === 0;
   return false;
 }
-const version = '2.0.0'
+const version = "2.0.0";
 export default {
   version,
   setConfig,
