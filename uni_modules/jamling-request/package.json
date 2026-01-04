@@ -4,7 +4,7 @@
 	"version": "1.3.0",
 	"description": "j-request",
 	"keywords": [
-        "jamling-request"
+        "j-request"
     ],
 	"scripts": {
 		"build": "tsc",
@@ -19,10 +19,10 @@
 	"engines": {
 		"HBuilderX": "^3.1.0",
 		"uni-app": "^3.6.15",
-		"uni-app-x": "^3.6.15"
+		"uni-app-x": ""
 	},
 	"dcloudext": {
-        "type": "component-vue",
+    "type": "sdk-js",
 		"sale": {
 			"regular": {
 				"price": "0.00"
